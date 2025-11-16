@@ -1122,8 +1122,11 @@ const firebaseConfig = {
             
             const listEl = document.getElementById('patient-list-ul');
             const listViewEl = document.getElementById('patient-list-view');
-            const indexRef = getPublicIndexRef(); // `artifacts/${appId}/public/data/patientIndex`
-            
+            const indexRef = function getPublicIndexRef() {
+  return collection(db, `artifacts/${appId}/public/data/patientIndex`);
+}
+
+                
             listEl.innerHTML = '<li class="text-gray-500">Buscando...</li>';
             listViewEl.classList.remove('hidden');
 
@@ -1592,3 +1595,4 @@ const firebaseConfig = {
     </script>
 </body>
 </html>
+
