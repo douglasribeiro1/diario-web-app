@@ -9,11 +9,13 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Lottie Player CDN (para animação) -->
-    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <!-- RETIRADO a pedido do usuário -->
+    <!-- <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script> -->
     
     <!-- jsPDF e jsPDF-AutoTable (para exportação PDF) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <!-- RETIRADO a pedido do usuário -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script> -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script> -->
     
     <style>
         /* Fonte Inter (padrão do Tailwind) */
@@ -65,7 +67,8 @@
         <div id="home-screen" class="hidden min-h-screen flex flex-col items-center justify-center p-6 bg-white">
             <div class="text-center max-w-lg w-full">
                 <!-- Animação Lottie -->
-                <lottie-player src="https://assets1.lottiefiles.com/packages/lf20_qps1cM.json" background="transparent" speed="1" style="width: 200px; height: 200px; margin: 0 auto;" loop autoplay></lottie-player>
+                <!-- RETIRADO a pedido do usuário -->
+                <!-- <lottie-player src="https://assets3.lottiefiles.com/packages/lf20_j1i0o9yFhF.json" background="transparent" speed="1" style="width: 200px; height: 200px; margin: 0 auto;" loop autoplay></lottie-player> -->
                 
                 <h1 class="text-3xl font-bold text-blue-700 mt-4">Diário Miccional</h1>
                 <p class="text-xl text-gray-600 mt-2 mb-10">Você é Paciente ou Profissional de Saúde?</p>
@@ -255,9 +258,10 @@
                 <div class="bg-white p-6 rounded-xl shadow-md mb-6">
                     <div class="flex justify-between items-start">
                         <h2 class="text-2xl font-bold text-blue-700 mb-4">Dados do Paciente</h2>
-                        <button id="btn-export-all-prof" class="bg-gray-600 text-white py-2 px-4 rounded-lg font-semibold shadow-md hover:bg-gray-700 text-sm">
+                        <!-- Botão de Exportar PDF RETIRADO a pedido do usuário -->
+                        <!-- <button id="btn-export-all-prof" class="bg-gray-600 text-white py-2 px-4 rounded-lg font-semibold shadow-md hover:bg-gray-700 text-sm">
                             Exportar Tudo (PDF)
-                        </button>
+                        </button> -->
                     </div>
                     <div id="prof-patient-profile" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
                         <!-- Dados do perfil do paciente aqui -->
@@ -373,9 +377,9 @@ const firebaseConfig = {
         const modalBtnCancel = document.getElementById('modal-btn-cancel');
         const modalBtnConfirm = document.getElementById('modal-btn-confirm');
         
-        const { jsPDF } = window.jspdf;
-        const autoTable = window.jspdf.plugin.autotable;
-
+        // RETIRADO a pedido do usuário (dependências do jsPDF)
+        // const { jsPDF } = window.jspdf;
+        
         // --- Funções Utilitárias ---
 
         /**
@@ -755,11 +759,13 @@ const firebaseConfig = {
                     <div class="flex space-x-2 mt-3 sm:mt-0">
                         <button class="btn-add-intake bg-blue-500 text-white py-2 px-4 rounded-lg font-semibold text-sm hover:bg-blue-600">+ Entrada</button>
                         <button class="btn-add-output bg-orange-500 text-white py-2 px-4 rounded-lg font-semibold text-sm hover:bg-orange-600">+ Saída</button>
-                        <button class="btn-export-day bg-gray-600 text-white py-2 px-4 rounded-lg font-semibold text-sm hover:bg-gray-700">PDF</button>
+                        <!-- Botão PDF RETIRADO -->
+                        <!-- <button class="btn-export-day bg-gray-600 text-white py-2 px-4 rounded-lg font-semibold text-sm hover:bg-gray-700">PDF</button> -->
                     </div>
                     ` : `
                     <div class="flex space-x-2 mt-3 sm:mt-0">
-                        <button class="btn-export-day-prof bg-gray-600 text-white py-2 px-4 rounded-lg font-semibold text-sm hover:bg-gray-700">Exportar Dia (PDF)</button>
+                        <!-- Botão PDF RETIRADO -->
+                        <!-- <button class="btn-export-day-prof bg-gray-600 text-white py-2 px-4 rounded-lg font-semibold text-sm hover:bg-gray-700">Exportar Dia (PDF)</button> -->
                     </div>
                     `}
                 </div>
@@ -812,7 +818,8 @@ const firebaseConfig = {
             if (view === 'patient') {
                 dayCard.querySelector('.btn-add-intake').onclick = () => showEntryModal('intake', day.id);
                 dayCard.querySelector('.btn-add-output').onclick = () => showEntryModal('output', day.id);
-                dayCard.querySelector('.btn-export-day').onclick = () => handleExportPDF([day], false);
+                // Listener do botão PDF RETIRADO
+                // dayCard.querySelector('.btn-export-day').onclick = () => handleExportPDF([day], false);
                 
                 // Adiciona listeners para botões de deletar/editar
                 dayCard.querySelectorAll('.btn-edit-entry').forEach(btn => {
@@ -829,7 +836,8 @@ const firebaseConfig = {
                     };
                 });
             } else {
-                 dayCard.querySelector('.btn-export-day-prof').onclick = () => handleExportPDF([day], true);
+                 // Listener do botão PDF RETIRADO
+                 // dayCard.querySelector('.btn-export-day-prof').onclick = () => handleExportPDF([day], true);
             }
 
             return dayCard;
@@ -1128,148 +1136,12 @@ const firebaseConfig = {
             return { totalIntake, totalOutput, balance, nightlyVolume, highlights };
         }
         
-        /**
-         * Lida com a exportação para PDF
-         * @param {Array} daysToExport Array de objetos de dia
-         * @param {boolean} isProfView Indica se é a visão do profissional
-         */
+        // RETIRADO a pedido do usuário: Função inteira de exportar PDF
+        /*
         async function handleExportPDF(daysToExport, isProfView) {
-            let patientProfile = null;
-            let patientUserIdToExport = userId; // Padrão para paciente
-            let prontuarioToSearch = '';
-
-            if (isProfView) {
-                // Na visão do prof, precisamos buscar o ID do paciente
-                prontuarioToSearch = document.getElementById('search-prontuario').value;
-                if (!prontuarioToSearch) {
-                    showModal("Erro", "Nenhum paciente selecionado.", { confirmText: "OK", cancelText: null });
-                    return;
-                }
-                const patientData = await getPatientDataByProntuario(prontuarioToSearch);
-                if (!patientData) {
-                    showModal("Erro", "Não foi possível encontrar dados do paciente para exportar.", { confirmText: "OK", cancelText: null });
-                    return;
-                }
-                patientUserIdToExport = patientData.patientUserId;
-                patientProfile = patientData.profile;
-            } else {
-                 // Na visão do paciente, apenas busca o próprio perfil
-                const profileDocRef = doc(db, "artifacts", appId, "users", patientUserIdToExport, "patientProfile", "profile");
-                const docSnap = await getDoc(profileDocRef);
-                if (docSnap.exists()) {
-                    patientProfile = docSnap.data();
-                }
-            }
-            
-            if (!patientProfile) {
-                 showModal("Erro", "Perfil do paciente não encontrado.", { confirmText: "OK", cancelText: null });
-                 return;
-            }
-            
-            const pdf = new jsPDF();
-            let y = 15; // Posição Y inicial
-
-            pdf.setFont('helvetica', 'bold');
-            pdf.setFontSize(16);
-            pdf.text('Diário Miccional Digital', pdf.internal.pageSize.getWidth() / 2, y, { align: 'center' });
-            y += 10;
-            
-            pdf.setFont('helvetica', 'normal');
-            pdf.setFontSize(12);
-            pdf.text(`Paciente: ${patientProfile.name}`, 14, y);
-            y += 7;
-            pdf.text(`Prontuário: ${patientProfile.medicalRecord}`, 14, y);
-            y += 7;
-            pdf.text(`Idade: ${patientProfile.age}`, 14, y);
-            y += 7;
-            pdf.text(`Medicamentos: ${patientProfile.medications || 'Nenhum'}`, 14, y);
-            y += 10;
-            
-            // Ordena os dias
-            daysToExport.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-            daysToExport.forEach((day, index) => {
-                if (index > 0) {
-                    pdf.addPage();
-                    y = 15;
-                }
-
-                const readableDate = new Date(day.date + 'T00:00:00').toLocaleDateString('pt-BR', { timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric' });
-                pdf.setFont('helvetica', 'bold');
-                pdf.setFontSize(14);
-                pdf.text(`Dia: ${readableDate}`, 14, y);
-                y += 10;
-
-                // Resumo
-                const stats = calculateDayStats(day);
-                pdf.setFont('helvetica', 'bold');
-                pdf.setFontSize(10);
-                pdf.text('Resumo:', 14, y);
-                pdf.setFont('helvetica', 'normal');
-                pdf.text(`Entradas: ${stats.totalIntake} ml | Saídas: ${stats.totalOutput} ml | Balanço: ${stats.balance} ml | Vol. Noturno: ${stats.nightlyVolume} ml`, 20, y + 5);
-                y += 12;
-
-                // Ordena entradas e saídas
-                const sortedIntake = [...day.intake].sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
-                const sortedOutput = [...day.output].sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
-
-                // Tabela de Entradas
-                if (sortedIntake.length > 0) {
-                    pdf.setFont('helvetica', 'bold');
-                    pdf.text('Entradas (Ingestão)', 14, y);
-                    y += 5;
-                    autoTable(pdf, {
-                        startY: y,
-                        head: [['Hora', 'Tipo', 'Detalhe', 'Volume (ml)']],
-                        body: sortedIntake.map(e => [
-                            formatDateTimeReadable(e.datetime).split(' ')[1],
-                            e.type === 'liquido' ? 'Líquido' : 'Fruta',
-                            e.fruitName || '-',
-                            e.volume || 0
-                        ]),
-                        theme: 'grid',
-                        headStyles: { fillColor: [22, 160, 133] },
-                        styles: { fontSize: 9, cellPadding: 2 },
-                    });
-                    y = pdf.lastAutoTable.finalY + 10;
-                }
-                
-                // Tabela de Saídas
-                if (sortedOutput.length > 0) {
-                    pdf.setFont('helvetica', 'bold');
-                    pdf.text('Saídas (Micção)', 14, y);
-                    y += 5;
-                    autoTable(pdf, {
-                        startY: y,
-                        head: [['Hora', 'Volume (ml)', 'Não Quant.', 'Local', 'Residual (ml)']],
-                        body: sortedOutput.map(e => [
-                            formatDateTimeReadable(e.datetime).split(' ')[1],
-                            e.volume || '-',
-                            e.nonQuantifiable || '-',
-                            e.location || '-',
-                            e.residual || 0
-                        ]),
-                        theme: 'grid',
-                        headStyles: { fillColor: [211, 84, 0] },
-                        styles: { fontSize: 9, cellPadding: 2 },
-                        didParseCell: (data) => {
-                            // Colore a célula de residual
-                            if (data.column.index === 4 && data.cell.section === 'body') {
-                                const residualValue = Number(data.cell.raw);
-                                if (residualValue > 100) {
-                                    data.cell.styles.textColor = [255, 0, 0]; // Vermelho
-                                } else if (residualValue > 30) {
-                                    data.cell.styles.textColor = [230, 126, 34]; // Laranja
-                                }
-                            }
-                        }
-                    });
-                    y = pdf.lastAutoTable.finalY + 10;
-                }
-            });
-
-            pdf.save(`diario_miccional_${patientProfile.medicalRecord}.pdf`);
+            ... (toda a função foi removida) ...
         }
+        */
         
         // --- Fluxo do Profissional ---
         
@@ -1442,7 +1314,8 @@ const firebaseConfig = {
                 });
                 
                 // Configura o botão de "Exportar Tudo"
-                document.getElementById('btn-export-all-prof').onclick = () => handleExportPDF(days, true);
+                // RETIRADO a pedido do usuário
+                // document.getElementById('btn-export-all-prof').onclick = () => handleExportPDF(days, true);
 
             }, (error) => {
                 console.error("Erro ao carregar diário (prof):", error);
@@ -1585,4 +1458,3 @@ const firebaseConfig = {
     -->
 </body>
 </html>
-
