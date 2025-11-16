@@ -6,11 +6,11 @@
     <title>Diário Miccional Digital</title>
     
     <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
     
     <style>
         /* Fonte Inter (padrão do Tailwind) */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        @import url('[https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap)');
         body {
             font-family: 'Inter', sans-serif;
             overscroll-behavior: none; /* Previne "pull-to-refresh" */
@@ -46,7 +46,7 @@
         <div id="loading-screen" class="flex items-center justify-center min-h-screen p-4">
             <div class="text-center">
                 <!-- Animação de Carregamento -->
-                <svg class="animate-spin h-10 w-10 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <svg class="animate-spin h-10 w-10 text-blue-600 mx-auto" xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
@@ -295,7 +295,7 @@
     <!-- =========================================================================================== -->
     <script type="module">
         // Importações do Firebase SDK
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { initializeApp } from "[https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js](https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js)";
         import { 
             getAuth, 
             signInAnonymously, 
@@ -303,7 +303,7 @@
             onAuthStateChanged,
             signInWithEmailAndPassword,
             signOut
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        } from "[https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js](https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js)";
         import { 
             getFirestore, 
             doc, 
@@ -319,7 +319,7 @@
             arrayUnion,
             arrayRemove,
             setLogLevel
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        } from "[https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js](https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js)";
 
         // --- Variáveis Globais do App ---
         let app, db, auth;
@@ -1321,7 +1321,7 @@
     
     COMO CORRIGIR O LOGIN DE PROFISSIONAL (LEIA COM ATENÇÃO):
     
-    O erro que você viu (ir para a tela de paciente) acontece porque sua conta
+    O erro que você viu (ir para a tela de paciente) acontece because sua conta
     ainda não tem "permissão de profissional". O login e senha estão corretos,
     mas o app não o reconhece como admin.
     
