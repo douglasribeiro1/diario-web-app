@@ -123,7 +123,7 @@
             <div id="patient-diary-view" class="hidden">
                 <header class="flex justify-between items-center mb-6 pb-4 border-b">
                     <div>
-                        <h2 class="text-3xl font-bold text-blue-800">Meu Diário Miccional</h2>
+                        <h2 class="text-3xl font-bold text-blue-800">Meu Diário</h2>
                         <p id="patient-name-display" class="text-gray-600 font-medium"></p>
                     </div>
                     <button id="btn-add-new-day" class="bg-green-500 text-white font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400">
@@ -246,6 +246,14 @@
                     <div id="prof-diary-days-list" class="space-y-6">
                         <!-- Conteúdo do diário do paciente (somente leitura) -->
                     </div>
+                </div>
+                
+                <!-- (NOVO) Lista de Pacientes -->
+                <div id="patient-list-view" class="hidden space-y-2 mt-4">
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Lista de Pacientes no Índice</h3>
+                    <ul id="patient-list-ul" class="bg-gray-50 p-4 rounded-lg border border-gray-200 divide-y divide-gray-200">
+                        <!-- A lista será inserida aqui -->
+                    </ul>
                 </div>
             </div>
         </div>
@@ -801,6 +809,7 @@ const firebaseConfig = {
                 const indexDocRef = doc(indexRef, prontuario);
                 batch.set(indexDocRef, indexData);
                 
+                // CORREÇÃO AQUI: A função correta é .commit(), não .write()
                 await batch.commit();
                 
                 console.log('Paciente e índice cadastrados!');
@@ -997,6 +1006,9 @@ const firebaseConfig = {
                 showSearchError("Por favor, digite um número de prontuário.");
                 return;
             }
+            
+            // Esconde a lista de pacientes se estiver a fazer uma busca
+            document.getElementById('patient-list-view').classList.add('hidden');
 
             const indexDocRef = doc(db, `artifacts/${appId}/public/data/patientIndex/${sanitizedProntuario}`);
             
@@ -1030,6 +1042,7 @@ const firebaseConfig = {
             document.getElementById('view-patient-prontuario').textContent = '';
             document.getElementById('view-patient-medicamentos').textContent = '';
             document.getElementById('prof-diary-days-list').innerHTML = '';
+            document.getElementById('patient-list-view').classList.add('hidden'); // Limpa a lista
             
             // Para de ouvir os dados do paciente anterior
             if (currentPatientDataUnsubscribe) currentPatientDataUnsubscribe();
@@ -1099,6 +1112,50 @@ const firebaseConfig = {
             }, (error) => {
                 console.error("Erro ao carregar diário do paciente: ", error);
             });
+        }
+        
+        /** Lista todos os pacientes do índice (teste de 'list') */
+        async function listAllPatients() {
+            // Limpa a tela
+            clearProfPatientView();
+            document.getElementById('patient-data-view').classList.add('hidden'); // Garante que a view de um paciente está escondida
+            
+            const listEl = document.getElementById('patient-list-ul');
+            const listViewEl = document.getElementById('patient-list-view');
+            const indexRef = getPublicIndexRef(); // `artifacts/${appId}/public/data/patientIndex`
+            
+            listEl.innerHTML = '<li class="text-gray-500">Buscando...</li>';
+            listViewEl.classList.remove('hidden');
+
+            try {
+                // Tenta obter a coleção (teste da permissão 'list')
+                const querySnapshot = await getDocs(indexRef);
+                
+                if (querySnapshot.empty) {
+                    listEl.innerHTML = '<li class="text-red-500">Nenhum paciente encontrado no índice.</li>';
+                    return;
+                }
+                
+                let html = '';
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    // doc.id é o número do prontuário
+                    html += `<li class="py-2">
+                        <strong class="text-blue-600">Prontuário:</strong> ${doc.id} <br>
+                        <span class="text-sm">Nome: ${data.nome} (ID Privado: ${data.patientUserId ? data.patientUserId.substring(0, 5) : 'N/A'}...)</span>
+                    </li>`;
+                });
+                listEl.innerHTML = html;
+                
+            } catch (error) {
+                console.error("Erro ao LISTAR pacientes: ", error);
+                // Se der erro de permissão aqui, o erro é 100% nas REGRAS.
+                if (error.code === 'permission-denied' || error.code === 'failed-precondition') {
+                     listEl.innerHTML = `<li class="text-red-600 font-bold">ERRO DE PERMISSÃO: As Regras do Firestore (Etapa 4) estão a bloquear a leitura da lista. Verifique o GUIA.md.</li>`;
+                } else {
+                     listEl.innerHTML = `<li class="text-red-600 font-bold">Erro: ${error.message}</li>`;
+                }
+            }
         }
         
         // --- Funções de Exportação (PDF) ---
@@ -1379,6 +1436,8 @@ const firebaseConfig = {
             clearProfPatientView();
             // O onAuthStateChanged vai para a tela home
         });
+        
+        document.getElementById('btn-prof-list-all').addEventListener('click', listAllPatients);
 
         // --- Painel Profissional (Busca) ---
         document.getElementById('btn-search-prontuario').addEventListener('click', () => {
@@ -1533,8 +1592,3 @@ const firebaseConfig = {
     </script>
 </body>
 </html>
-
-
-
-
-
