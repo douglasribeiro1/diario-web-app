@@ -78,7 +78,7 @@
             <p class="text-xl text-center text-gray-600 mb-12">Você é Paciente ou Profissional de Saúde?</p>
             
             <button id="btn-go-patient" class="w-full bg-blue-600 text-white text-2xl font-bold py-6 px-8 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-300 ease-in-out mb-6">
-                Paciente
+                🧑‍🦽 Paciente
             </button>
             
             <button id="btn-go-professional" class="w-full bg-gray-700 text-white text-2xl font-bold py-6 px-8 rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition duration-300 ease-in-out">
@@ -296,9 +296,14 @@
         // !! ETAPA DE CONFIGURAÇÃO OBRIGATÓRIA !!
         // Cole suas chaves do Firebase que você copiou na Etapa 2 do GUIA.
         // O app NÃO vai funcionar sem isso.
+        //
+        // SE VOCÊ VER O ERRO "Unexpected token '}'" (Token '}' inesperado):
+        // Isso é 100% um erro de copiar e colar.
+        // Apague o bloco 'const firebaseConfig' abaixo (linhas 350-357)
+        // e cole o bloco NOVO e COMPLETO do Firebase no lugar.
         // =======================================================================
         
-        // 1. Cole seu objeto 'firebaseConfig' aqui:
+        // 1. Cole seu objeto 'firebaseConfig' aqui (substitua este bloco todo):
 const firebaseConfig = {
   apiKey: "AIzaSyCZRKyT20a_jdD9oZWCq9iy9nTxER5pGWg",
   authDomain: "diario-miccional-1.firebaseapp.com",
@@ -1241,16 +1246,14 @@ const firebaseConfig = {
         /** Inicializa a Animação Lottie */
         function initLottie() {
             try {
-                lottie.loadAnimation({
-                    container: lottieLoading,
-                    renderer: 'svg',
-                    loop: true,
-                    autoplay: true,
-                    // Animação JSON leve de um "loading" (copiada de lottiefiles.com)
-                    animationData: {"v":"5.5.0","fr":60,"ip":0,"op":180,"w":200,"h":200,"nm":"Loading Loop","ddd":0,"assets":[],"layers":[{"ddd":0,"ind":1,"ty":4,"nm":"Shape Layer 1","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[100,100,0],"ix":2},"a":{"a":0,"k":[0,0,0],"ix":1},"s":{"a":0,"k":[100,100,100],"ix":6}},"ao":0,"shapes":[{"ty":"gr","it":[{"ind":0,"ty":5,"nm":"Path 1","ks":{"a":0,"k":{"i":[[0,-13.255],[13.255,0],[0,13.255],[-13.255,0]],"o":[[0,13.255],[-13.255,0],[0,-13.255],[13.255,0]],"v":[[-24,0],[0,-24],[24,0],[0,24]],"c":true},"ix":2}},{"ty":"tr","p":{"a":0,"k":[0,0],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[1,"m",0.5,1],"ix":6},"r":{"a":1,"k":[{"i":{"x":[0.667],"y":[1]},"o":{"x":[0.333],"y":[0]},"n":["0_1_0_0"],"t":0,"s":[0]},{"i":{"x":[0.667],"y":[1]},"o":{"x":[0.333],"y":[0]},"n":["0_1_0_0"],"t":90,"s":[360]},{"i":{"x":[0.667],"y":[1]},"o":{"x":[0.333],"y":[0]},"n":["0_1_0_0"],"t":120,"s":[360]},{"t":180,"s":[720]}],"ix":7},"o":{"a":0,"k":100,"ix":11},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5}},{"ty":"st","c":{"a":0,"k":[0.129411771894,0.450980395079,0.941176474094,1],"ix":3},"o":{"a":0,"k":100,"ix":4},"w":{"a":0,"k":8,"ix":5},"lc":2,"lj":2,"ml":4,"bm":0}],"bm":0}],"ip":0,"op":180,"st":0,"bm":0}
-                });
+                // REMOVIDO: O JSON de 'animationData' estava a causar um SyntaxError.
+                // Foi substituído por uma mensagem de texto simples.
+                // A biblioteca Lottie (lottie.min.js) ainda é carregada, mas não é
+                // usada aqui para evitar o erro de 'parsing'.
+                lottieLoading.innerHTML = '<p class="text-gray-400">(Carregando...)</p>';
+                
             } catch (e) {
-                console.warn("Lottie não carregou.", e);
+                console.warn("Lottie não carregou ou não foi necessário.", e);
                 lottieLoading.innerHTML = '<p class="text-gray-400">(Carregando...)</p>';
             }
         }
@@ -1525,7 +1528,3 @@ const firebaseConfig = {
     </script>
 </body>
 </html>
-
-
-
-
