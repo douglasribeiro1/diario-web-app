@@ -259,12 +259,15 @@
                         <h2 class="text-2xl font-bold text-blue-700 mb-4">Dados do Paciente</h2>
                         <!-- Botão PDF Retirado -->
                     </div>
+                    <!-- CORREÇÃO: Este container agora mostra o perfil do *primeiro* paciente encontrado -->
                     <div id="prof-patient-profile" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
                         <!-- Dados do perfil do paciente aqui -->
                     </div>
                 </div>
 
                 <!-- Diário do Paciente (visão do prof) -->
+                <!-- CORREÇÃO: Este container agora agrupa *múltiplas* sessões -->
+                <h3 class="text-xl font-semibold text-gray-700 mb-4">Sessões do Diário</h3>
                 <div id="prof-days-container" class="space-y-8">
                     <!-- Dias do paciente carregados aqui -->
                 </div>
@@ -332,7 +335,8 @@
         let app, db, auth;
         let userId = null; // UID do Firebase (paciente ou profissional)
         let isProfessional = false;
-        let currentPatientDataUnsubscribe = null; // Função para parar listener do paciente (visão do prof)
+        // CORREÇÃO: O listener do profissional agora é um array
+        let currentPatientDataUnsubscribes = []; 
         let currentPatientDiaryUnsubscribe = null; // Listener do diário (visão do paciente)
 
         // Configuração do Firebase (puxada do ambiente)
@@ -609,6 +613,9 @@
             
             showScreen('loading');
             try {
+                // Esta lógica está correta. A sessão anônima (userId) é o "dono" do perfil.
+                // Se o usuário faz logout, um novo userId é gerado, e ele não
+                // encontrará este perfil, indo para o registo (comportamento "zerado").
                 const profileDocRef = doc(db, "artifacts", appId, "users", userId, "patientProfile", "profile");
                 const docSnap = await getDoc(profileDocRef);
 
@@ -651,20 +658,22 @@
                 createdAt: new Date().toISOString()
             };
 
+            // O índice é a chave para o profissional encontrar os dados
             const indexData = {
                 medicalRecord: prontuario,
-                patientUserId: userId,
-                patientName: nome
+                patientUserId: userId, // O ID anônimo desta sessão
+                patientName: nome,
+                createdAt: new Date().toISOString() // Adicionado para ordenação
             };
             
             showScreen('loading');
             try {
-                // Salva o perfil privado
+                // Salva o perfil privado (ligado ao userId anônimo)
                 const profileDocRef = doc(db, "artifacts", appId, "users", userId, "patientProfile", "profile");
                 await setDoc(profileDocRef, patientData);
                 
                 // Cria o índice público para busca do profissional
-                // Usamos o userId como ID do documento de índice para fácil referência
+                // Usamos o userId como ID do documento de índice
                 const indexDocRef = doc(db, "artifacts", appId, "public/data/patientIndex", userId);
                 await setDoc(indexDocRef, indexData);
 
@@ -749,8 +758,9 @@
          * Cria e retorna um elemento HTML para um cartão de dia
          * @param {object} day Objeto do dia
          * @param {string} view 'patient' ou 'prof'
+         * @param {string|null} [sessionInfo=null] Info extra para o profissional
          */
-        function createDayCard(day, view = 'patient') {
+        function createDayCard(day, view = 'patient', sessionInfo = null) {
             const dayCard = document.createElement('div');
             dayCard.className = 'bg-white p-4 md:p-6 rounded-xl shadow-lg';
             dayCard.dataset.dayId = day.id; // day.id é a data YYYY-MM-DD
@@ -768,8 +778,16 @@
             const sortedIntake = [...day.intake].sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
             const sortedOutput = [...day.output].sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
 
+            // Adiciona o cabeçalho da sessão se for visão do profissional
+            const sessionHeader = (view === 'prof' && sessionInfo) 
+                ? `<div class="mb-2 p-2 bg-gray-100 rounded-md">
+                     <p class="text-sm font-semibold text-gray-700">Sessão de: ${sessionInfo.date}</p>
+                     <p class="text-xs text-gray-500">ID da Sessão: ${sessionInfo.userId}</p>
+                   </div>` 
+                : '';
 
             dayCard.innerHTML = `
+                ${sessionHeader}
                 <!-- Header do Cartão -->
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 pb-4 border-b">
                     <h3 class="text-2xl font-bold text-blue-600">${readableDate}</h3>
@@ -1179,15 +1197,16 @@
          */
         async function handleProfLogout() {
             try {
+                // CORREÇÃO: Limpa os listeners antigos
+                currentPatientDataUnsubscribes.forEach(unsub => unsub());
+                currentPatientDataUnsubscribes = [];
+
                 await signOut(auth);
                 // Limpa dados da tela
                 document.getElementById('patient-data-container').classList.add('hidden');
                 document.getElementById('search-prontuario').value = '';
                 document.getElementById('search-status').textContent = '';
-                if (currentPatientDataUnsubscribe) {
-                    currentPatientDataUnsubscribe();
-                    currentPatientDataUnsubscribe = null;
-                }
+                
                 showScreen('home'); // Volta para a tela inicial
             } catch (error) {
                 console.error("Erro ao sair:", error);
@@ -1195,9 +1214,9 @@
         }
         
         /**
-         * Retorna os dados do paciente (ID e perfil) com base no prontuário
+         * CORREÇÃO: Retorna os dados de TODAS as sessões de um prontuário
          */
-        async function getPatientDataByProntuario(prontuario) {
+        async function getPatientSessionsByProntuario(prontuario) {
             const status = document.getElementById('search-status');
             status.textContent = 'Buscando...';
             status.className = 'text-sm mt-2 text-gray-600';
@@ -1215,25 +1234,18 @@
                     return null;
                 }
                 
-                const patientIndex = querySnapshot.docs[0].data();
-                const patientUserId = patientIndex.patientUserId;
+                const sessions = [];
+                querySnapshot.forEach(doc => {
+                    sessions.push(doc.data());
+                });
 
-                const profileDocRef = doc(db, "artifacts", appId, "users", patientUserId, "patientProfile", "profile");
-                const profileSnap = await getDoc(profileDocRef);
-                
-                if (!profileSnap.exists()) {
-                    status.textContent = 'Dados do paciente não encontrados (índice existe).';
-                    status.className = 'text-sm mt-2 text-red-600';
-                    return null;
-                }
+                // Ordena as sessões pela mais recente
+                sessions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-                status.textContent = `Exibindo dados de: ${profileSnap.data().name}`;
+                status.textContent = `Encontradas ${sessions.length} sessões para: ${sessions[0].patientName}`;
                 status.className = 'text-sm mt-2 text-green-700';
                 
-                return {
-                    patientUserId: patientUserId,
-                    profile: profileSnap.data()
-                };
+                return sessions; // Retorna um array de sessões
                 
             } catch (error) {
                 console.error("Erro na busca:", error);
@@ -1244,27 +1256,47 @@
         }
         
         /**
-         * Lida com a busca do paciente pelo profissional
+         * CORREÇÃO: Lida com a busca de múltiplas sessões
          */
         async function handlePatientSearch(event) {
             event.preventDefault();
             const prontuario = sanitize(document.getElementById('search-prontuario').value);
             if (!prontuario) return;
 
-            // Limpa o listener antigo
-            if (currentPatientDataUnsubscribe) {
-                currentPatientDataUnsubscribe();
-                currentPatientDataUnsubscribe = null;
-            }
+            // Limpa os listeners antigos
+            currentPatientDataUnsubscribes.forEach(unsub => unsub());
+            currentPatientDataUnsubscribes = [];
+            // Limpa o container de dias
+            document.getElementById('prof-days-container').innerHTML = '';
 
-            const patientData = await getPatientDataByProntuario(prontuario);
 
-            if (patientData) {
+            const patientSessions = await getPatientSessionsByProntuario(prontuario);
+
+            if (patientSessions && patientSessions.length > 0) {
                 document.getElementById('patient-data-container').classList.remove('hidden');
-                // Renderiza o perfil estático
-                renderProfPatientProfile(patientData.profile);
-                // Inicia o listener real-time para o diário
-                loadPatientDiaryForProf(patientData.patientUserId, patientData.profile);
+                
+                // Busca o perfil da *primeira* sessão (mais recente) para exibir os dados
+                const firstSession = patientSessions[0];
+                const profileDocRef = doc(db, "artifacts", appId, "users", firstSession.patientUserId, "patientProfile", "profile");
+                const profileSnap = await getDoc(profileDocRef);
+
+                if (profileSnap.exists()) {
+                    renderProfPatientProfile(profileSnap.data());
+                } else {
+                    // Fallback se o perfil não for encontrado
+                    renderProfPatientProfile({
+                        name: firstSession.patientName,
+                        medicalRecord: firstSession.medicalRecord,
+                        age: "N/A",
+                        medications: "N/A"
+                    });
+                }
+
+                // Inicia os listeners real-time para o diário de CADA sessão
+                patientSessions.forEach(session => {
+                    loadPatientDiaryForProf(session.patientUserId, session.createdAt);
+                });
+
             } else {
                 document.getElementById('patient-data-container').classList.add('hidden');
             }
@@ -1284,15 +1316,22 @@
         }
 
         /**
-         * Carrega o diário do paciente (com listener) para o profissional
+         * CORREÇÃO: Carrega o diário de UMA sessão do paciente para o profissional
+         * @param {string} patientUserId O UID da sessão anônima
+         * @param {string} sessionDate Data de criação da sessão (para info)
          */
-        function loadPatientDiaryForProf(patientUserId, profile) {
+        function loadPatientDiaryForProf(patientUserId, sessionDate) {
             const container = document.getElementById('prof-days-container');
             
             const daysCollectionRef = collection(db, "artifacts", appId, "users", patientUserId, "diaryDays");
             const q = query(daysCollectionRef);
             
-            currentPatientDataUnsubscribe = onSnapshot(q, (querySnapshot) => {
+            const sessionInfo = {
+                userId: patientUserId,
+                date: formatDateTimeReadable(sessionDate)
+            };
+
+            const unsubscribe = onSnapshot(q, (querySnapshot) => {
                 const days = [];
                 querySnapshot.forEach((doc) => {
                     days.push({ id: doc.id, ...doc.data() });
@@ -1300,21 +1339,35 @@
                 days.sort((a, b) => new Date(b.date) - new Date(a.date));
                 
                 if (days.length === 0) {
-                    container.innerHTML = '<p class="text-center text-gray-500 bg-white p-6 rounded-xl shadow-md">Este paciente ainda não possui registros no diário.</p>';
+                    // Não mostra nada se esta sessão específica não tiver dias
                     return;
                 }
                 
-                container.innerHTML = ''; // Limpa
+                // Encontra ou cria o container para esta sessão
+                let sessionContainerId = `session-container-${patientUserId}`;
+                let sessionContainer = document.getElementById(sessionContainerId);
+                if (!sessionContainer) {
+                    sessionContainer = document.createElement('div');
+                    sessionContainer.id = sessionContainerId;
+                    sessionContainer.className = 'session-group mb-8'; // Adiciona espaço entre sessões
+                    container.appendChild(sessionContainer);
+                }
+                
+                sessionContainer.innerHTML = ''; // Limpa apenas esta sessão para recarregar
+                
                 days.forEach(day => {
-                    const dayCard = createDayCard(day, 'prof');
-                    container.appendChild(dayCard);
+                    // Passa a info da sessão para o cartão
+                    const dayCard = createDayCard(day, 'prof', sessionInfo);
+                    sessionContainer.appendChild(dayCard);
                 });
                 
-                // Botão de exportar foi removido
             }, (error) => {
-                console.error("Erro ao carregar diário (prof):", error);
-                container.innerHTML = '<p class="text-red-600">Erro ao carregar diário. Verifique as permissões.</p>';
+                console.error(`Erro ao carregar diário (prof) para ${patientUserId}:`, error);
+                container.innerHTML += `<p class="text-red-600">Erro ao carregar diário da sessão ${patientUserId}.</p>`;
             });
+
+            // Guarda a função de unsubscribe
+            currentPatientDataUnsubscribes.push(unsubscribe);
         }
         
 
