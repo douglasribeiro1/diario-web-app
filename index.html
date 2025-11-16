@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Diário Miccional Digital</title>
     
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
@@ -38,10 +39,13 @@
 </head>
 <body class="bg-gray-100 text-gray-800 antialiased">
 
+    <!-- Container Principal do App -->
     <div id="app" class="min-h-screen">
 
+        <!-- TELA DE CARREGAMENTO INICIAL -->
         <div id="loading-screen" class="flex items-center justify-center min-h-screen p-4">
             <div class="text-center">
+                <!-- Animação de Carregamento -->
                 <svg class="animate-spin h-10 w-10 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -50,6 +54,7 @@
             </div>
         </div>
 
+        <!-- TELA INICIAL (Paciente vs Profissional) -->
         <div id="home-screen" class="hidden min-h-screen flex flex-col items-center justify-center p-6 bg-white">
             <div class="text-center max-w-lg w-full">
                 
@@ -57,18 +62,19 @@
                 <p class="text-xl text-gray-600 mt-2 mb-10">Você é Paciente ou Profissional de Saúde?</p>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- CORREÇÃO 1: Emoji de paciente removido -->
                     <button id="btn-go-patient" class="flex flex-col items-center justify-center p-8 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 transition-all duration-300 transform hover:scale-105">
-                        <span class="text-6xl mb-4">🧑‍🦽</span>
                         <span class="text-2xl font-semibold">Paciente</span>
                     </button>
+                    <!-- CORREÇÃO 1: Emoji de profissional removido -->
                     <button id="btn-go-prof" class="flex flex-col items-center justify-center p-8 bg-gray-700 text-white rounded-lg shadow-lg hover:bg-gray-800 transition-all duration-300 transform hover:scale-105">
-                        <span class="text-6xl mb-4">🧑‍⚕️</span>
                         <span class="text-2xl font-semibold">Profissional</span>
                     </button>
                 </div>
             </div>
         </div>
 
+        <!-- TELA DE CADASTRO DO PACIENTE -->
         <div id="patient-register-screen" class="hidden min-h-screen flex items-center justify-center p-4">
             <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg">
                 <h2 class="text-2xl font-bold text-center text-blue-700 mb-6">Cadastro do Paciente</h2>
@@ -95,9 +101,12 @@
                         </button>
                     </div>
                 </form>
+                <!-- CORREÇÃO 2: Botão "Voltar" adicionado -->
+                <button id="btn-reg-back-to-home" class="mt-4 text-sm text-center w-full text-blue-600 hover:underline">Voltar</button>
             </div>
         </div>
 
+        <!-- TELA DO DIÁRIO DO PACIENTE -->
         <div id="patient-diary-screen" class="hidden p-4 md:p-6 max-w-5xl mx-auto">
             <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
                 <div>
@@ -109,14 +118,19 @@
                 </button>
             </header>
             
+            <!-- Container dos dias -->
             <div id="days-container" class="space-y-8">
+                <!-- Dias serão injetados aqui pelo JS -->
                 <p class="text-center text-gray-500">Nenhum dia registrado ainda. Clique em "Adicionar Dia" para começar.</p>
             </div>
             
+            <!-- Formulários de Modal (escondidos) -->
             <div id="form-templates" class="hidden">
+                <!-- Formulário de Entrada (Ingestão) -->
                 <form id="intake-form-template" class="space-y-4">
                     <input type="hidden" name="dayId">
-                    <input type="hidden" name="entryId"> <div>
+                    <input type="hidden" name="entryId"> <!-- Para edição -->
+                    <div>
                         <label class="block text-sm font-medium text-gray-700">Data e Hora</label>
                         <input type="datetime-local" name="datetime" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required>
                     </div>
@@ -137,9 +151,11 @@
                     </div>
                 </form>
                 
+                <!-- Formulário de Saída (Micção) -->
                 <form id="output-form-template" class="space-y-4">
                     <input type="hidden" name="dayId">
-                    <input type="hidden" name="entryId"> <div>
+                    <input type="hidden" name="entryId"> <!-- Para edição -->
+                    <div>
                         <label class="block text-sm font-medium text-gray-700">Data e Hora</label>
                         <input type="datetime-local" name="datetime" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required>
                     </div>
@@ -147,7 +163,8 @@
                     <div class="flex items-center space-x-4">
                         <div class="flex-1">
                             <label class="block text-sm font-medium text-gray-700">Volume Urinado (ml)</label>
-                            <input type="number" name="volume" placeholder="Ex: 150" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" oninput="this.form.querySelector('#non-quantifiable-group').style.display = (this.value ? 'none' : 'block'); this.form.querySelector('select[name=nonQuantifiable]').value = ''; this.form.querySelector('select[name=nonQuantifiable]').disabled = !!this.value;">
+                            <!-- Lógica oninput melhorada -->
+                            <input type="number" name="volume" placeholder="Ex: 150" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" oninput="this.form.querySelector('select[name=nonQuantifiable]').value = ''; this.form.querySelector('select[name=nonQuantifiable]').disabled = !!this.value;">
                         </div>
                         <span class="mt-6 text-gray-500">OU</span>
                         <div class="flex-1" id="non-quantifiable-group">
@@ -178,9 +195,10 @@
             </div>
         </div>
         
+        <!-- TELA DE LOGIN PROFISSIONAL -->
         <div id="prof-login-screen" class="hidden min-h-screen flex items-center justify-center p-4 bg-gray-900">
             <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md text-center">
-                <span class="text-7xl">🧑‍⚕️</span>
+                <span class="text-7xl">🧑‍⚕️</span> <!-- Emoji mantido aqui pois não estava na tela inicial -->
                 <h2 class="text-2xl font-bold text-center text-gray-800 mt-4 mb-2">Área do Profissional</h2>
                 <p class="text-gray-600 mb-6">Acesso restrito.</p>
                 <form id="prof-login-form">
@@ -199,10 +217,12 @@
                         <p id="login-error" class="text-red-600 text-sm hidden"></p>
                     </div>
                 </form>
+                <!-- Este botão "Voltar" já existia e está correto -->
                 <button id="btn-back-to-home" class="mt-4 text-sm text-blue-600 hover:underline">Voltar</button>
             </div>
         </div>
 
+        <!-- TELA DO PAINEL PROFISSIONAL -->
         <div id="prof-dashboard-screen" class="hidden p-4 md:p-6 max-w-7xl mx-auto">
             <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
                 <h1 class="text-3xl font-bold text-gray-800">Painel Profissional</h1>
@@ -212,6 +232,7 @@
                 </div>
             </header>
 
+            <!-- Barra de Busca -->
             <div class="bg-white p-4 rounded-xl shadow-md mb-6">
                 <form id="patient-search-form" class="flex flex-col sm:flex-row gap-3">
                     <label for="search-prontuario" class="font-medium flex-shrink-0 py-2">Buscar por Prontuário:</label>
@@ -223,28 +244,38 @@
                 <p id="search-status" class="text-sm mt-2"></p>
             </div>
 
+            <!-- Área de Dados do Paciente -->
             <div id="patient-data-container" class="hidden">
+                <!-- Informações do Paciente -->
                 <div class="bg-white p-6 rounded-xl shadow-md mb-6">
                     <div class="flex justify-between items-start">
                         <h2 class="text-2xl font-bold text-blue-700 mb-4">Dados do Paciente</h2>
-                        </div>
+                        <!-- Botão PDF Retirado -->
+                    </div>
                     <div id="prof-patient-profile" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
-                        </div>
+                        <!-- Dados do perfil do paciente aqui -->
+                    </div>
                 </div>
 
+                <!-- Diário do Paciente (visão do prof) -->
                 <div id="prof-days-container" class="space-y-8">
-                    </div>
+                    <!-- Dias do paciente carregados aqui -->
+                </div>
             </div>
 
         </div>
 
+        <!-- MODAL GENÉRICO (Confirmação, Alerta) -->
         <div id="modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+            <!-- Overlay -->
             <div id="modal-overlay" class="absolute inset-0 bg-black opacity-60"></div>
             
+            <!-- Conteúdo do Modal -->
             <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm z-10">
                 <h3 id="modal-title" class="text-xl font-bold text-gray-800 mb-4"></h3>
                 <div id="modal-body" class="text-gray-600 mb-6">
-                    </div>
+                    <!-- Conteúdo dinâmico (texto ou elemento HTML) -->
+                </div>
                 <div class="flex justify-end space-x-3">
                     <button id="modal-btn-cancel" class="bg-gray-200 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-300">
                         Cancelar
@@ -256,7 +287,13 @@
             </div>
         </div>
 
-    </div> <script type="module">
+    </div> <!-- Fim do #app -->
+
+
+    <!-- =========================================================================================== -->
+    <!-- SCRIPT PRINCIPAL DO APP (inclui lógica do Firebase)                                        -->
+    <!-- =========================================================================================== -->
+    <script type="module">
         // Importações do Firebase SDK
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { 
@@ -457,11 +494,9 @@
                             // Usuário está logado
                             userId = user.uid;
                             
-                            // *** NOVA LÓGICA DE VERIFICAÇÃO (MAIS FÁCIL) ***
-                            // Vamos verificar se o UID do usuário existe na coleção 'administradores'
+                            // *** LÓGICA DE VERIFICAÇÃO (MAIS FÁCIL) ***
                             
                             // Esta verificação só acontece se o usuário NÃO for anônimo
-                            // (pacientes são anônimos)
                             if (!user.isAnonymous) {
                                 const adminDocRef = doc(db, "administradores", user.uid);
                                 const adminDocSnap = await getDoc(adminDocRef);
@@ -469,9 +504,11 @@
                                 if (adminDocSnap.exists()) {
                                     isProfessional = true;
                                 } else {
+                                    // Se não está na lista de admin, não é profissional
                                     isProfessional = false;
                                 }
                             } else {
+                                // Se é anônimo, é paciente
                                 isProfessional = false;
                             }
                             
@@ -517,12 +554,9 @@
          */
         async function signInPatient() {
             try {
-                // *** CORREÇÃO: Não checar auth.currentUser aqui ***
-                // Se um profissional logou e depois clicou em "Paciente",
-                // precisamos forçar o logout e logar como anônimo.
-                
+                // Se um profissional estiver logado, faz logout primeiro
                 if (auth.currentUser && !auth.currentUser.isAnonymous) {
-                    await signOut(auth); // Faz logout do profissional
+                    await signOut(auth);
                 }
                 
                 showScreen('loading');
@@ -711,19 +745,23 @@
 
 
             dayCard.innerHTML = `
+                <!-- Header do Cartão -->
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 pb-4 border-b">
                     <h3 class="text-2xl font-bold text-blue-600">${readableDate}</h3>
                     ${view === 'patient' ? `
                     <div class="flex space-x-2 mt-3 sm:mt-0">
                         <button class="btn-add-intake bg-blue-500 text-white py-2 px-4 rounded-lg font-semibold text-sm hover:bg-blue-600">+ Entrada</button>
                         <button class="btn-add-output bg-orange-500 text-white py-2 px-4 rounded-lg font-semibold text-sm hover:bg-orange-600">+ Saída</button>
-                        </div>
+                        <!-- Botão PDF Retirado -->
+                    </div>
                     ` : `
                     <div class="flex space-x-2 mt-3 sm:mt-0">
-                        </div>
+                        <!-- Botão PDF Retirado -->
+                    </div>
                     `}
                 </div>
 
+                <!-- Estatísticas -->
                 <div class="mb-6">
                     <h4 class="text-lg font-semibold mb-3 text-gray-700">Resumo do Dia</h4>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -747,7 +785,9 @@
                     ${highlightsHTML ? `<ul class="mt-4 space-y-1">${highlightsHTML}</ul>` : ''}
                 </div>
 
+                <!-- Listas de Entradas e Saídas -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Entradas -->
                     <div>
                         <h4 class="text-lg font-semibold mb-3 text-blue-700">Entradas (Ingestão)</h4>
                         <ul id="intake-list-${day.id}" class="space-y-2">
@@ -755,6 +795,7 @@
                             ${sortedIntake.map(entry => createEntryItem(entry, 'intake', day.id, view)).join('')}
                         </ul>
                     </div>
+                    <!-- Saídas -->
                     <div>
                         <h4 class="text-lg font-semibold mb-3 text-orange-700">Saídas (Micção)</h4>
                         <ul id="output-list-${day.id}" class="space-y-2">
@@ -1260,6 +1301,8 @@
         document.getElementById('btn-go-patient').onclick = signInPatient;
         document.getElementById('btn-go-prof').onclick = () => showScreen('profLogin');
         document.getElementById('btn-back-to-home').onclick = () => showScreen('home');
+        // CORREÇÃO 2: Listener para o novo botão "Voltar"
+        document.getElementById('btn-reg-back-to-home').onclick = () => showScreen('home');
 
         // Forms
         document.getElementById('patient-register-form').onsubmit = handlePatientRegister;
@@ -1271,66 +1314,95 @@
 
     </script>
     
-    </body>
+    <!-- 
+    ===========================================================================================
+    INSTRUÇÕES DE CONFIGURAÇÃO DO FIREBASE (Simplificado)
+    ===========================================================================================
+    
+    COMO CORRIGIR O LOGIN DE PROFISSIONAL (LEIA COM ATENÇÃO):
+    
+    O erro que você viu (ir para a tela de paciente) acontece porque sua conta
+    ainda não tem "permissão de profissional". O login e senha estão corretos,
+    mas o app não o reconhece como admin.
+    
+    Siga estes 3 passos para corrigir:
+
+    1. CRIE O USUÁRIO PROFISSIONAL (NO FIREBASE AUTHENTICATION)
+       a. Vá ao seu Console do Firebase -> Authentication -> Users -> "Add user".
+       b. Crie o email e senha do profissional.
+       c. Copie o "User UID" (ex: "abc123xyz") do usuário que você acabou de criar.
+    
+    2. ADICIONE O PROFISSIONAL À "LISTA DE ADMINS" (NO FIRESTORE DATABASE)
+       a. Vá ao seu Console do Firebase -> Firestore Database.
+       b. Clique em "+ Start collection" (Iniciar coleção).
+       c. Digite o ID da coleção: `administradores` (tudo minúsculo e no plural).
+       d. Clique em "Next".
+       e. Em "Document ID", COLE o "User UID" que você copiou (ex: "abc123xyz").
+       f. Adicione um campo (opcional):
+          - Field: `email`
+          - Value: `email.do.profissional@exemplo.com`
+       g. Clique em "Save".
+    
+    3. ATUALIZE AS REGRAS DE SEGURANÇA (NO FIRESTORE DATABASE)
+       a. Vá ao seu Console do Firebase -> Firestore Database -> "Rules" (Regras).
+       b. Apague tudo e cole as regras abaixo. (Elas são essenciais para
+          permitir que o app verifique a lista de administradores).
+    
+    ================ INÍCIO DAS REGRAS DO FIRESTORE (VERSÃO MAIS RECENTE) ================
+    rules_version = '2';
+    
+    service cloud.firestore {
+      match /databases/{database}/documents {
+      
+        // Função helper para verificar se o usuário é um profissional
+        // (lendo o documento de permissão)
+        function isProfessional() {
+          return request.auth != null && 
+                 exists(/databases/$(database)/documents/administradores/$(request.auth.uid));
+        }
+        
+        // Acesso à lista de administradores
+        match /administradores/{userId} {
+            // Ninguém pode ler a lista de admins, exceto o próprio admin
+            allow read: if request.auth.uid == userId;
+            // Ninguém pode escrever (deve ser feito manualmente no console)
+            allow write: if false;
+        }
+
+        // Caminho do App (use 'diario-miccional-1' ou $(appId))
+        match /artifacts/{appId} {
+        
+          // --- REGRAS DO PACIENTE (DADOS PRIVADOS) ---
+          // O paciente só pode ler e escrever SEUS PRÓPRIOS dados
+          match /users/{userId}/{collection}/{docId} {
+            allow read, write: if request.auth.uid == userId;
+          }
+          
+          // O profissional pode LER os dados de qualquer paciente
+          // (mas não pode escrever)
+          match /users/{patientId}/patientProfile/profile {
+             allow get: if isProfessional() || request.auth.uid == patientId;
+          }
+          match /users/{patientId}/diaryDays/{dayId} {
+             allow get, list: if isProfessional() || request.auth.uid == patientId;
+          }
+          
+          // --- REGRAS DO ÍNDICE PÚBLICO (PARA BUSCA) ---
+          match /public/data/patientIndex/{docId} {
+            // O paciente só pode criar SEU PRÓPRIO índice
+            allow create: if request.auth.uid == request.resource.data.patientUserId;
+            
+            // O profissional pode LER (listar/buscar) o índice
+            allow list, get: if isProfessional();
+            
+            // Ninguém pode atualizar ou deletar (para segurança)
+            allow update, delete: if false;
+          }
+        }
+      }
+    }
+    ================ FIM DAS REGRAS DO FIRESTORE ================
+
+    -->
+</body>
 </html>
-```eof
-
-### 3. Regras de Segurança do Firestore (MUITO IMPORTANTE)
-
-Você **precisa** atualizar suas regras de segurança no Firebase para que esta nova lógica funcione.
-
-Vá em **Firestore Database** -> **Rules** (Regras) e substitua todo o texto por isto:
-
-```text
-rules_version = '2';
-
-service cloud.firestore {
-  match /databases/{database}/documents {
-  
-    // Função helper para verificar se o usuário é um profissional
-    // (lendo o documento de permissão)
-    function isProfessional() {
-      return request.auth != null && 
-             exists(/databases/$(database)/documents/administradores/$(request.auth.uid));
-    }
-    
-    // Acesso à lista de administradores
-    match /administradores/{userId} {
-        // Ninguém pode ler a lista de admins, exceto o próprio admin
-        allow read: if request.auth.uid == userId;
-        // Ninguém pode escrever (deve ser feito manualmente no console)
-        allow write: if false;
-    }
-
-    // Caminho do App (use 'diario-miccional-1' ou $(appId))
-    match /artifacts/{appId} {
-    
-      // --- REGRAS DO PACIENTE (DADOS PRIVADOS) ---
-      // O paciente só pode ler e escrever SEUS PRÓPRIOS dados
-      match /users/{userId}/{collection}/{docId} {
-        allow read, write: if request.auth.uid == userId;
-      }
-      
-      // O profissional pode LER os dados de qualquer paciente
-      // (mas não pode escrever)
-      match /users/{patientId}/patientProfile/profile {
-         allow get: if isProfessional() || request.auth.uid == patientId;
-      }
-      match /users/{patientId}/diaryDays/{dayId} {
-         allow get, list: if isProfessional() || request.auth.uid == patientId;
-      }
-      
-      // --- REGRAS DO ÍNDICE PÚBLICO (PARA BUSCA) ---
-      match /public/data/patientIndex/{docId} {
-        // O paciente só pode criar SEU PRÓPRIO índice
-        allow create: if request.auth.uid == request.resource.data.patientUserId;
-        
-        // O profissional pode LER (listar/buscar) o índice
-        allow list, get: if isProfessional();
-        
-        // Ninguém pode atualizar ou deletar (para segurança)
-        allow update, delete: if false;
-      }
-    }
-  }
-}
