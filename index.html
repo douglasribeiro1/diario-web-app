@@ -170,7 +170,7 @@
                     <div class="flex items-center space-x-4">
                         <div class="flex-1">
                             <label class="block text-sm font-medium text-gray-700">Volume Urinado (ml)</label>
-                            <input type="number" name="volume" placeholder="Ex: 150" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" oninput="this.form.querySelector('#non-quantifiable-group').style.display = (this.value ? 'none' : 'block');">
+                            <input type="number" name="volume" placeholder="Ex: 150" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" oninput="this.form.querySelector('#non-quantifiable-group').style.display = (this.value ? 'none' : 'block'); this.form.querySelector('select[name=nonQuantifiable]').value = ''; this.form.querySelector('select[name=nonQuantifiable]').disabled = !!this.value;">
                         </div>
                         <span class="mt-6 text-gray-500">OU</span>
                         <div class="flex-1" id="non-quantifiable-group">
@@ -240,7 +240,7 @@
             <!-- Barra de Busca -->
             <div class="bg-white p-4 rounded-xl shadow-md mb-6">
                 <form id="patient-search-form" class="flex flex-col sm:flex-row gap-3">
-                    <label for="search-prontuario" class="font-medium">Buscar por Prontuário:</label>
+                    <label for="search-prontuario" class="font-medium flex-shrink-0 py-2">Buscar por Prontuário:</label>
                     <input type="text" id="search-prontuario" class="flex-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
                     <button type="submit" class="w-full sm:w-auto bg-blue-600 text-white py-2 px-5 rounded-lg font-semibold shadow-md hover:bg-blue-700 transition-all duration-300">
                         Buscar
@@ -298,7 +298,7 @@
 
 
     <!-- =========================================================================================== -->
-    <!-- SCRIPT PRINCIPAL DO APP (inclui lógica do Firebase)                                         -->
+    <!-- SCRIPT PRINCIPAL DO APP (inclui lógica do Firebase)                                        -->
     <!-- =========================================================================================== -->
     <script type="module">
         // Importações do Firebase SDK
@@ -309,7 +309,8 @@
             signInWithCustomToken, 
             onAuthStateChanged,
             signInWithEmailAndPassword,
-            signOut
+            signOut,
+            getIdTokenResult // Necessário para Custom Claims
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
             getFirestore, 
@@ -375,17 +376,17 @@
         }
 
         /**
-         * Sanitiza o input do usuário para remover HTML e caracteres perigosos
+         * Sanitiza (escapa) o input do usuário para prevenir XSS
          * @param {string} str String de entrada
-         * @returns {string} String sanitizada
+         * @returns {string} String escapada
          */
         function sanitize(str) {
             if (!str) return "";
             const temp = document.createElement('div');
-            temp.textContent = str;
-            return temp.innerHTML
-                .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, "")
-                .replace(/<\/?\w(?:[^"'>]|"[^"]*"|'[^']*')*>/gim, "");
+            temp.textContent = str; // Converte <, >, & etc. para &lt;, &gt;, &amp;
+            return temp.innerHTML; // Retorna a string escapada
+            // As replaces por regex foram removidas pois rodavam em HTML já escapado
+            // e não eram eficazes. Esta abordagem é a padrão para prevenir XSS.
         }
         
         /**
@@ -449,7 +450,7 @@
             }
 
             modalBtnConfirm.textContent = confirmText;
-            modalBtnConfirm.className = `text-white py-2 px-4 rounded-lg font-semibold shadow-md ${confirmColor}`;
+            modalBtnConfirm.className = `text-white py-2 px-4 rounded-lg font-semibold shadow-md ${confirmColor} hover:opacity-90`;
             
             modalBtnCancel.textContent = cancelText;
             modalBtnCancel.style.display = cancelText ? 'inline-block' : 'none';
@@ -479,6 +480,11 @@
          */
         async function initializeFirebase() {
             try {
+                // Validação de configuração
+                if (!firebaseConfig || Object.keys(firebaseConfig).length === 0) {
+                    throw new Error("Configuração do Firebase não encontrada. Verifique as variáveis de ambiente.");
+                }
+
                 app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
@@ -490,19 +496,25 @@
                         // Usuário está logado
                         userId = user.uid;
                         
-                        // Verifica se é profissional (baseado em ter um email, anônimos não têm)
-                        // A forma correta é usar Custom Claims, mas isso é uma aproximação
-                        if (!user.isAnonymous) {
-                            isProfessional = true;
+                        // *** CORREÇÃO DE SEGURANÇA ***
+                        // Precisamos verificar as Custom Claims para saber se é profissional.
+                        // Apenas checar `isAnonymous` não é seguro.
+                        const idTokenResult = await user.getIdTokenResult(true); // true = forçar refresh
+                        isProfessional = idTokenResult.claims.isProfessional === true;
+
+                        if (isProfessional) {
+                            // É PROFISSIONAL
+                            console.log("Usuário é Profissional");
                             document.getElementById('prof-info').innerHTML = `
-                                <p class="text-gray-600 text-sm">${user.email}</p>
+                                <p class="text-gray-600 text-sm">${sanitize(user.email)}</p>
                                 <button id="btn-prof-logout" class="text-sm text-red-600 hover:underline">Sair</button>
                             `;
                             document.getElementById('btn-prof-logout').onclick = handleProfLogout;
                             showScreen('profDashboard');
                         } else {
-                            // É paciente (anônimo ou token)
-                            isProfessional = false;
+                            // É PACIENTE
+                            console.log("Usuário é Paciente");
+                            isProfessional = false; // Garante que é falso
                             await checkPatientRegistration();
                         }
                     } else {
@@ -515,7 +527,7 @@
 
             } catch (error) {
                 console.error("Erro ao inicializar Firebase:", error);
-                document.getElementById('loading-screen').innerHTML = "<p class='text-red-600'>Erro ao carregar o aplicativo. Verifique a configuração do Firebase.</p>";
+                document.getElementById('loading-screen').innerHTML = `<p class='text-red-600 p-4 text-center'><b>Erro ao carregar o aplicativo.</b><br>${error.message}</p>`;
             }
         }
         
@@ -536,7 +548,8 @@
             } catch (error) {
                 console.error("Erro no login do paciente:", error);
                 showScreen('home');
-                alert("Não foi possível iniciar a sessão. Tente novamente.");
+                // Não use alert()
+                showModal("Erro de Login", "Não foi possível iniciar a sessão. Tente novamente.", { confirmText: "OK", cancelText: null });
             }
         }
         
@@ -578,7 +591,7 @@
             const medicamentos = sanitize(document.getElementById('reg-medicamentos').value);
 
             if (!prontuario || !nome || !idade) {
-                alert("Por favor, preencha Prontuário, Nome e Idade.");
+                showModal("Campos Obrigatórios", "Por favor, preencha Prontuário, Nome e Idade.", { confirmText: "OK", cancelText: null });
                 return;
             }
             
@@ -613,7 +626,7 @@
                 
             } catch (error) {
                 console.error("Erro ao salvar cadastro:", error);
-                alert("Erro ao salvar cadastro. Tente novamente.");
+                showModal("Erro no Cadastro", "Erro ao salvar cadastro. Tente novamente.", { confirmText: "OK", cancelText: null });
                 showScreen('patientRegister');
             }
         }
@@ -627,21 +640,28 @@
             const patientInfo = document.getElementById('patient-info');
             const profileDocRef = doc(db, "artifacts", appId, "users", patientUserId, "patientProfile", "profile");
             
-            getDoc(profileDocRef).then(docSnap => {
+            // Listener para o perfil (caso mude)
+            onSnapshot(profileDocRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     patientInfo.textContent = `${data.name} (Prontuário: ${data.medicalRecord})`;
+                } else {
+                     patientInfo.textContent = "Paciente não encontrado.";
                 }
+            }, (error) => {
+                console.error("Erro ao carregar perfil do paciente:", error);
+                patientInfo.textContent = "Erro ao carregar perfil.";
             });
 
-            // Limpa listener antigo, se houver
+
+            // Limpa listener antigo do diário, se houver
             if (currentPatientDiaryUnsubscribe) {
                 currentPatientDiaryUnsubscribe();
             }
 
             // Ouve a coleção de dias
             const daysCollectionRef = collection(db, "artifacts", appId, "users", patientUserId, "diaryDays");
-            const q = query(daysCollectionRef); // Pode adicionar orderBy('date', 'desc') se quiser
+            const q = query(daysCollectionRef);
             
             currentPatientDiaryUnsubscribe = onSnapshot(q, (querySnapshot) => {
                 const days = [];
@@ -696,6 +716,11 @@
                 highlightsHTML += `<li class="px-2 py-1 ${color} rounded-md text-sm">${h.message}</li>`;
             });
 
+            // Ordena entradas e saídas por data/hora
+            const sortedIntake = [...day.intake].sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
+            const sortedOutput = [...day.output].sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
+
+
             dayCard.innerHTML = `
                 <!-- Header do Cartão -->
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 pb-4 border-b">
@@ -743,16 +768,16 @@
                     <div>
                         <h4 class="text-lg font-semibold mb-3 text-blue-700">Entradas (Ingestão)</h4>
                         <ul id="intake-list-${day.id}" class="space-y-2">
-                            ${day.intake.length === 0 ? '<li class="text-gray-500 text-sm">Nenhuma entrada registrada.</li>' : ''}
-                            ${day.intake.map(entry => createEntryItem(entry, 'intake', day.id, view)).join('')}
+                            ${sortedIntake.length === 0 ? '<li class="text-gray-500 text-sm">Nenhuma entrada registrada.</li>' : ''}
+                            ${sortedIntake.map(entry => createEntryItem(entry, 'intake', day.id, view)).join('')}
                         </ul>
                     </div>
                     <!-- Saídas -->
                     <div>
                         <h4 class="text-lg font-semibold mb-3 text-orange-700">Saídas (Micção)</h4>
                         <ul id="output-list-${day.id}" class="space-y-2">
-                            ${day.output.length === 0 ? '<li class="text-gray-500 text-sm">Nenhuma saída registrada.</li>' : ''}
-                            ${day.output.map(entry => createEntryItem(entry, 'output', day.id, view)).join('')}
+                            ${sortedOutput.length === 0 ? '<li class="text-gray-500 text-sm">Nenhuma saída registrada.</li>' : ''}
+                            ${sortedOutput.map(entry => createEntryItem(entry, 'output', day.id, view)).join('')}
                         </ul>
                     </div>
                 </div>
@@ -837,7 +862,7 @@
             const docSnap = await getDoc(dayDocRef);
 
             if (docSnap.exists()) {
-                alert("O dia de hoje já foi adicionado.");
+                showModal("Dia Já Existe", "O dia de hoje já foi adicionado.", { confirmText: "OK", cancelText: null });
                 return;
             }
 
@@ -852,7 +877,7 @@
                 // O listener onSnapshot vai atualizar a UI
             } catch (error) {
                 console.error("Erro ao adicionar dia:", error);
-                alert("Erro ao adicionar o dia. Tente novamente.");
+                showModal("Erro", "Erro ao adicionar o dia. Tente novamente.", { confirmText: "OK", cancelText: null });
             }
         }
 
@@ -902,8 +927,10 @@
                 const volumeInput = form.querySelector('input[name="volume"]');
                 const nonQuantifiableGroup = form.querySelector('#non-quantifiable-group');
                 const nonQuantifiableSelect = form.querySelector('select[name="nonQuantifiable"]');
+                
                 nonQuantifiableGroup.style.display = (volumeInput.value ? 'none' : 'block');
                 volumeInput.disabled = (nonQuantifiableSelect.value !== '');
+                nonQuantifiableSelect.disabled = (volumeInput.value !== '');
             }
 
             // Mostra o modal com o formulário
@@ -948,29 +975,38 @@
             const dayDocRef = doc(db, "artifacts", appId, "users", userId, "diaryDays", dayId);
 
             try {
+                // *** CORREÇÃO DE INTEGRIDADE DE DADOS ***
+                // A lógica de edição (isEditing) estava usando arrayRemove/arrayUnion
+                // em duas chamadas, o que não é atômico e pode causar problemas.
+                // A forma correta de editar um item num array é:
+                // 1. Ler o documento (Get)
+                // 2. Modificar o array em memória (Modify)
+                // 3. Salvar o array modificado de volta (Set/Update)
+
                 if (isEditing) {
-                    // Para editar, lemos o doc, removemos o antigo e adicionamos o novo
+                    // LÓGICA DE EDIÇÃO (Get -> Modify -> Set)
                     const docSnap = await getDoc(dayDocRef);
                     if (!docSnap.exists()) throw new Error("Documento do dia não encontrado.");
-                    
+
                     const dayData = docSnap.data();
-                    const oldEntry = dayData[type].find(e => e.id === entryId);
+                    const entriesArray = dayData[type] || [];
                     
-                    if (oldEntry) {
-                        await updateDoc(dayDocRef, {
-                            [type]: arrayRemove(oldEntry) // Remove o antigo
-                        });
-                        await updateDoc(dayDocRef, {
-                            [type]: arrayUnion(entryData) // Adiciona o novo
-                        });
+                    const index = entriesArray.findIndex(e => e.id === entryId);
+                    
+                    if (index > -1) {
+                        entriesArray[index] = entryData; // Substitui o item
                     } else {
-                        // Se não achar o antigo, apenas adiciona
-                        await updateDoc(dayDocRef, {
-                            [type]: arrayUnion(entryData)
-                        });
+                        entriesArray.push(entryData); // Adiciona se não achou (fallback)
                     }
+
+                    // Salva o array inteiro de volta
+                    await updateDoc(dayDocRef, {
+                        [type]: entriesArray
+                    });
+
                 } else {
-                    // Adiciona nova entrada/saída ao array
+                    // LÓGICA DE ADIÇÃO (Atomic ArrayUnion)
+                    // Esta lógica estava correta e foi mantida.
                     await updateDoc(dayDocRef, {
                         [type]: arrayUnion(entryData)
                     });
@@ -979,7 +1015,7 @@
                 hideModal(); // Sucesso
             } catch (error) {
                 console.error("Erro ao salvar registro:", error);
-                alert("Erro ao salvar. Tente novamente.");
+                showModal("Erro", "Erro ao salvar. Tente novamente.", { confirmText: "OK", cancelText: null });
             }
         }
         
@@ -1003,6 +1039,7 @@
                             const entryToDelete = dayData[entryType].find(e => e.id === entryId);
 
                             if (entryToDelete) {
+                                // A lógica de `arrayRemove` para deletar está correta.
                                 await updateDoc(dayDocRef, {
                                     [entryType]: arrayRemove(entryToDelete)
                                 });
@@ -1010,7 +1047,7 @@
                             hideModal();
                         } catch (error) {
                             console.error("Erro ao apagar:", error);
-                            alert("Erro ao apagar registro.");
+                            showModal("Erro", "Erro ao apagar registro.", { confirmText: "OK", cancelText: null });
                         }
                     }
                 }
@@ -1050,12 +1087,12 @@
                 if (entry.residual > 100) {
                     highlights.push({
                         level: 'danger',
-                        message: `Residual alto: ${entry.residual} ml às ${formatDateTimeReadable(entry.datetime)}`
+                        message: `Residual alto: ${entry.residual} ml às ${formatDateTimeReadable(entry.datetime).split(' ')[1]}`
                     });
                 } else if (entry.residual > 30) {
                     highlights.push({
                         level: 'warning',
-                        message: `Residual elevado: ${entry.residual} ml às ${formatDateTimeReadable(entry.datetime)}`
+                        message: `Residual elevado: ${entry.residual} ml às ${formatDateTimeReadable(entry.datetime).split(' ')[1]}`
                     });
                 }
             });
@@ -1072,21 +1109,35 @@
          */
         async function handleExportPDF(daysToExport, isProfView) {
             let patientProfile = null;
-            let patientUserId = userId; // Padrão para paciente
+            let patientUserIdToExport = userId; // Padrão para paciente
+            let prontuarioToSearch = '';
 
             if (isProfView) {
                 // Na visão do prof, precisamos buscar o ID do paciente
-                const prontuario = document.getElementById('search-prontuario').value;
-                const patientData = await getPatientDataByProntuario(prontuario);
-                if (!patientData) return;
-                patientUserId = patientData.patientUserId;
+                prontuarioToSearch = document.getElementById('search-prontuario').value;
+                if (!prontuarioToSearch) {
+                    showModal("Erro", "Nenhum paciente selecionado.", { confirmText: "OK", cancelText: null });
+                    return;
+                }
+                const patientData = await getPatientDataByProntuario(prontuarioToSearch);
+                if (!patientData) {
+                    showModal("Erro", "Não foi possível encontrar dados do paciente para exportar.", { confirmText: "OK", cancelText: null });
+                    return;
+                }
+                patientUserIdToExport = patientData.patientUserId;
+                patientProfile = patientData.profile;
+            } else {
+                 // Na visão do paciente, apenas busca o próprio perfil
+                const profileDocRef = doc(db, "artifacts", appId, "users", patientUserIdToExport, "patientProfile", "profile");
+                const docSnap = await getDoc(profileDocRef);
+                if (docSnap.exists()) {
+                    patientProfile = docSnap.data();
+                }
             }
-
-            // Buscar dados do perfil do paciente
-            const profileDocRef = doc(db, "artifacts", appId, "users", patientUserId, "patientProfile", "profile");
-            const docSnap = await getDoc(profileDocRef);
-            if (docSnap.exists()) {
-                patientProfile = docSnap.data();
+            
+            if (!patientProfile) {
+                 showModal("Erro", "Perfil do paciente não encontrado.", { confirmText: "OK", cancelText: null });
+                 return;
             }
             
             const pdf = new jsPDF();
@@ -1097,18 +1148,16 @@
             pdf.text('Diário Miccional Digital', pdf.internal.pageSize.getWidth() / 2, y, { align: 'center' });
             y += 10;
             
-            if (patientProfile) {
-                pdf.setFont('helvetica', 'normal');
-                pdf.setFontSize(12);
-                pdf.text(`Paciente: ${patientProfile.name}`, 14, y);
-                y += 7;
-                pdf.text(`Prontuário: ${patientProfile.medicalRecord}`, 14, y);
-                y += 7;
-                pdf.text(`Idade: ${patientProfile.age}`, 14, y);
-                y += 7;
-                pdf.text(`Medicamentos: ${patientProfile.medications || 'Nenhum'}`, 14, y);
-                y += 10;
-            }
+            pdf.setFont('helvetica', 'normal');
+            pdf.setFontSize(12);
+            pdf.text(`Paciente: ${patientProfile.name}`, 14, y);
+            y += 7;
+            pdf.text(`Prontuário: ${patientProfile.medicalRecord}`, 14, y);
+            y += 7;
+            pdf.text(`Idade: ${patientProfile.age}`, 14, y);
+            y += 7;
+            pdf.text(`Medicamentos: ${patientProfile.medications || 'Nenhum'}`, 14, y);
+            y += 10;
             
             // Ordena os dias
             daysToExport.sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -1134,15 +1183,19 @@
                 pdf.text(`Entradas: ${stats.totalIntake} ml | Saídas: ${stats.totalOutput} ml | Balanço: ${stats.balance} ml | Vol. Noturno: ${stats.nightlyVolume} ml`, 20, y + 5);
                 y += 12;
 
+                // Ordena entradas e saídas
+                const sortedIntake = [...day.intake].sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
+                const sortedOutput = [...day.output].sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
+
                 // Tabela de Entradas
-                if (day.intake.length > 0) {
+                if (sortedIntake.length > 0) {
                     pdf.setFont('helvetica', 'bold');
                     pdf.text('Entradas (Ingestão)', 14, y);
                     y += 5;
                     autoTable(pdf, {
                         startY: y,
                         head: [['Hora', 'Tipo', 'Detalhe', 'Volume (ml)']],
-                        body: day.intake.map(e => [
+                        body: sortedIntake.map(e => [
                             formatDateTimeReadable(e.datetime).split(' ')[1],
                             e.type === 'liquido' ? 'Líquido' : 'Fruta',
                             e.fruitName || '-',
@@ -1156,14 +1209,14 @@
                 }
                 
                 // Tabela de Saídas
-                if (day.output.length > 0) {
+                if (sortedOutput.length > 0) {
                     pdf.setFont('helvetica', 'bold');
                     pdf.text('Saídas (Micção)', 14, y);
                     y += 5;
                     autoTable(pdf, {
                         startY: y,
                         head: [['Hora', 'Volume (ml)', 'Não Quant.', 'Local', 'Residual (ml)']],
-                        body: day.output.map(e => [
+                        body: sortedOutput.map(e => [
                             formatDateTimeReadable(e.datetime).split(' ')[1],
                             e.volume || '-',
                             e.nonQuantifiable || '-',
@@ -1173,12 +1226,14 @@
                         theme: 'grid',
                         headStyles: { fillColor: [211, 84, 0] },
                         styles: { fontSize: 9, cellPadding: 2 },
-                        columnStyles: {
-                            4: { // Coluna Residual
-                                cellFormat: (data, cell) => {
-                                    if (data > 100) cell.styles.textColor = [255, 0, 0]; // Vermelho
-                                    else if (data > 30) cell.styles.textColor = [243, 156, 18]; // Amarelo
-                                    return data;
+                        didParseCell: (data) => {
+                            // Colore a célula de residual
+                            if (data.column.index === 4 && data.cell.section === 'body') {
+                                const residualValue = Number(data.cell.raw);
+                                if (residualValue > 100) {
+                                    data.cell.styles.textColor = [255, 0, 0]; // Vermelho
+                                } else if (residualValue > 30) {
+                                    data.cell.styles.textColor = [230, 126, 34]; // Laranja
                                 }
                             }
                         }
@@ -1187,7 +1242,7 @@
                 }
             });
 
-            pdf.save(`diario_miccional_${patientProfile ? patientProfile.medicalRecord : 'export'}.pdf`);
+            pdf.save(`diario_miccional_${patientProfile.medicalRecord}.pdf`);
         }
         
         // --- Fluxo do Profissional ---
@@ -1197,8 +1252,8 @@
          */
         async function handleProfLogin(event) {
             event.preventDefault();
-            const email = sanitize(document.getElementById('login-email').value);
-            const password = sanitize(document.getElementById('login-password').value);
+            const email = document.getElementById('login-email').value; // Sanitizar não é necessário aqui, Firebase lida com isso.
+            const password = document.getElementById('login-password').value;
             const errorP = document.getElementById('login-error');
             const submitBtn = document.getElementById('btn-login-submit');
             
@@ -1209,6 +1264,8 @@
             try {
                 await signInWithEmailAndPassword(auth, email, password);
                 // Sucesso, o onAuthStateChanged vai lidar com a mudança de tela
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Entrar';
             } catch (error) {
                 console.error("Erro de login:", error.code);
                 errorP.textContent = 'Email ou senha inválidos.';
@@ -1218,7 +1275,7 @@
                 setTimeout(() => {
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Entrar';
-                }, 3000); // 3 segundos de atraso
+                }, 2000); // 2 segundos de atraso
             }
         }
 
@@ -1324,10 +1381,10 @@
         function renderProfPatientProfile(profile) {
             const container = document.getElementById('prof-patient-profile');
             container.innerHTML = `
-                <div><strong>Nome:</strong> ${profile.name}</div>
-                <div><strong>Prontuário:</strong> ${profile.medicalRecord}</div>
+                <div><strong>Nome:</strong> ${sanitize(profile.name)}</div>
+                <div><strong>Prontuário:</strong> ${sanitize(profile.medicalRecord)}</div>
                 <div><strong>Idade:</strong> ${profile.age}</div>
-                <div><strong>Medicamentos:</strong> ${profile.medications || 'N/A'}</div>
+                <div><strong>Medicamentos:</strong> ${sanitize(profile.medications) || 'N/A'}</div>
             `;
         }
 
@@ -1389,7 +1446,7 @@
     
     <!-- 
     ===========================================================================================
-    INSTRUÇÕES DE CONFIGURAÇÃO DO FIREBASE E DEPLOY
+    INSTRUÇÕES DE CONFIGURAÇÃO DO FIREBASE E DEPLOY (MANTIDAS DO SEU ORIGINAL)
     ===========================================================================================
     
     Obrigado por usar este template! Para que o aplicativo funcione, você precisa
@@ -1417,10 +1474,9 @@
     a. Vá ao seu Console do Firebase -> Authentication -> Users.
     b. Clique em "Add user".
     c. Digite o EMAIL e a SENHA para o profissional de saúde.
-    d. (RECOMENDADO PARA SEGURANÇA MÁXIMA) Após criar o usuário, você deveria
-       adicionar "Custom Claims" a ele. Isso exige um script de backend (Firebase Functions)
-       para definir `isProfessional: true` no token do usuário. As regras de 
-       segurança abaixo são ESCRITAS PARA USAR ISSO.
+    d. (OBRIGATÓRIO PARA ESTE CÓDIGO) Você precisa definir "Custom Claims"
+       para marcar este usuário como profissional. A forma mais fácil é usando
+       o Firebase Admin SDK (ex: numa Cloud Function ou script local).
        
        Exemplo de Firebase Function (para referência):
        const functions = require('firebase-functions');
@@ -1429,9 +1485,12 @@
        
        exports.addProfessionalRole = functions.https.onCall(async (data, context) => {
          // (Proteja isso para que apenas admins possam chamar)
+         if (context.auth.token.admin !== true) {
+             return { error: 'Apenas admins podem adicionar roles.' };
+         }
          const user = await admin.auth().getUserByEmail(data.email);
          await admin.auth().setCustomUserClaims(user.uid, { isProfessional: true });
-         return { message: `Claim set for ${data.email}` };
+         return { message: `Claim 'isProfessional' adicionada para ${data.email}` };
        });
 
     3. COMO CONFIGURAR REGRAS DE SEGURANÇA (OBRIGATÓRIO):
@@ -1450,7 +1509,7 @@
           return request.auth != null && request.auth.token.isProfessional == true;
         }
         
-        // Caminho do App (substitua 'diario-miccional-default' se você usou um __app_id diferente)
+        // Caminho do App (use 'match /artifacts/{appId} { ... }' se o __app_id for variável)
         match /artifacts/{appId} {
         
           // --- REGRAS DO PACIENTE (DADOS PRIVADOS) ---
@@ -1462,10 +1521,10 @@
           // O profissional pode LER os dados de qualquer paciente
           // (mas não pode escrever)
           match /users/{patientId}/patientProfile/profile {
-             allow get: if isProfessional();
+             allow get: if isProfessional() || request.auth.uid == patientId;
           }
           match /users/{patientId}/diaryDays/{dayId} {
-             allow get, list: if isProfessional();
+             allow get, list: if isProfessional() || request.auth.uid == patientId;
           }
           
           // --- REGRAS DO ÍNDICE PÚBLICO (PARA BUSCA) ---
