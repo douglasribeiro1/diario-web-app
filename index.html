@@ -113,9 +113,16 @@
                     <h1 class="text-3xl font-bold text-blue-700">Meu Diário Miccional</h1>
                     <p id="patient-info" class="text-gray-600 mt-1">Carregando...</p>
                 </div>
-                <button id="btn-add-day" class="mt-4 sm:mt-0 w-full sm:w-auto bg-green-600 text-white py-2 px-5 rounded-lg font-semibold shadow-md hover:bg-green-700 transition-all duration-300">
-                    + Adicionar Dia
-                </button>
+                <!-- Agrupando os botões -->
+                <div class="flex flex-col sm:flex-row sm:items-center gap-2 mt-4 sm:mt-0">
+                    <button id="btn-add-day" class="w-full sm:w-auto bg-green-600 text-white py-2 px-5 rounded-lg font-semibold shadow-md hover:bg-green-700 transition-all duration-300">
+                        + Adicionar Dia
+                    </button>
+                    <!-- BOTÃO DE SAIR ADICIONADO -->
+                    <button id="btn-patient-logout" class="w-full sm:w-auto bg-red-600 text-white py-2 px-5 rounded-lg font-semibold shadow-md hover:bg-red-700 transition-all duration-300">
+                        Sair
+                    </button>
+                </div>
             </header>
             
             <!-- Container dos dias -->
@@ -303,7 +310,7 @@
             onAuthStateChanged,
             signInWithEmailAndPassword,
             signOut
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"; // <-- CORRIGIDO (estava https_www... antes)
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
             getFirestore, 
             doc, 
@@ -558,7 +565,7 @@
                 if (auth.currentUser && !auth.currentUser.isAnonymous) {
                     console.log("Profissional logado. A fazer logout...");
                     await signOut(auth);
-                    // O listener onAuthStateChanged vai detetar o logout, e depois o login anônimo.
+                    // O onAuthStateChanged vai detetar o logout, e depois o login anônimo.
                     await signInAnonymously(auth);
                     return; // Deixa o listener tratar do resto
                 }
@@ -1319,7 +1326,7 @@
         document.getElementById('btn-go-patient').onclick = signInPatient;
         document.getElementById('btn-go-prof').onclick = () => showScreen('profLogin');
         document.getElementById('btn-back-to-home').onclick = () => showScreen('home');
-        // CORREÇÃO 2: Listener para o novo botão "Voltar"
+        // Listener para o novo botão "Voltar"
         document.getElementById('btn-reg-back-to-home').onclick = () => showScreen('home');
 
         // Forms
@@ -1329,6 +1336,14 @@
         
         // Botões do Diário
         document.getElementById('btn-add-day').onclick = handleAddDay;
+        
+        // ADICIONADO: Listener para o botão de logout do paciente
+        document.getElementById('btn-patient-logout').onclick = async () => {
+            if (auth) {
+                await signOut(auth); // Faz logout do usuário anônimo/paciente
+            }
+            showScreen('home'); // Volta para a tela inicial
+        };
 
     </script>
     
@@ -1366,14 +1381,14 @@
        b. Apague tudo e cole as regras abaixo. (Elas são essenciais para
           permitir que o app verifique a lista de administradores).
     
-    ================ INÍCIO DAS REGRAS DO FIRESTORE (VERSÃO MAIS RECENTE) ================
+    ================ INÍCIO DAS REGRAS DO FIRESTORE (VERSÃO CORRIGIDA) ================
     rules_version = '2';
     
     service cloud.firestore {
       match /databases/{database}/documents {
       
-        // Função helper para verificar se o usuário é um profissional
-        // (lendo o documento de permissão)
+        // Função helper (usada pelas regras abaixo)
+        // Verifica se o UID do utilizador existe na coleção de administradores
         function isProfessional() {
           return request.auth != null && 
                  exists(/databases/$(database)/documents/administradores/$(request.auth.uid));
@@ -1381,39 +1396,42 @@
         
         // Acesso à lista de administradores
         match /administradores/{userId} {
-            // Ninguém pode ler a lista de admins, exceto o próprio admin
-            allow read: if request.auth.uid == userId;
-            // Ninguém pode escrever (deve ser feito manualmente no console)
-            allow write: if false;
+            // CORREÇÃO: Permite que *qualquer utilizador autenticado*
+            // verifique a existência (get) de um documento de administrador.
+            allow get: if request.auth != null; 
+            
+            // Ninguém pode listar, escrever ou apagar (isto é feito manually)
+            allow list, write, delete: if false; 
         }
 
         // Caminho do App (use 'diario-miccional-1' ou $(appId))
         match /artifacts/{appId} {
         
           // --- REGRAS DO PACIENTE (DADOS PRIVADOS) ---
-          // O paciente só pode ler e escrever SEUS PRÓPRIOS dados
+          // O paciente só pode ler e escrever OS SEUS PRÓPRIOS dados
           match /users/{userId}/{collection}/{docId} {
             allow read, write: if request.auth.uid == userId;
           }
           
-          // O profissional pode LER os dados de qualquer paciente
-          // (mas não pode escrever)
+          // --- REGRAS DO PROFISSIONAL (LER DADOS DO PACIENTE) ---
           match /users/{patientId}/patientProfile/profile {
-             allow get: if isProfessional() || request.auth.uid == patientId;
+             // Só permite "get" (ler) se o utilizador for profissional
+             allow get: if isProfessional();
           }
           match /users/{patientId}/diaryDays/{dayId} {
-             allow get, list: if isProfessional() || request.auth.uid == patientId;
+             // Só permite "get" (ler) e "list" (listar dias) se for profissional
+             allow get, list: if isProfessional();
           }
           
           // --- REGRAS DO ÍNDICE PÚBLICO (PARA BUSCA) ---
           match /public/data/patientIndex/{docId} {
-            // O paciente só pode criar SEU PRÓPRIO índice
+            // O paciente só pode criar O SEU PRÓPRIO índice
             allow create: if request.auth.uid == request.resource.data.patientUserId;
             
             // O profissional pode LER (listar/buscar) o índice
             allow list, get: if isProfessional();
             
-            // Ninguém pode atualizar ou deletar (para segurança)
+            // Ninguém pode atualizar ou apagar
             allow update, delete: if false;
           }
         }
