@@ -123,7 +123,7 @@
             <div id="patient-diary-view" class="hidden">
                 <header class="flex justify-between items-center mb-6 pb-4 border-b">
                     <div>
-                        <h2 class="text-3xl font-bold text-blue-800">Meu Diário</h2>
+                        <h2 class="text-3xl font-bold text-blue-800">Meu Diário Miccional</h2>
                         <p id="patient-name-display" class="text-gray-600 font-medium"></p>
                     </div>
                     <button id="btn-add-new-day" class="bg-green-500 text-white font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400">
@@ -201,9 +201,14 @@
                         <h2 class="text-3xl font-bold text-blue-800">Painel do Profissional</h2>
                         <p id="prof-email-display" class="text-gray-600"></p>
                     </div>
-                    <button id="btn-prof-logout" class="mt-2 sm:mt-0 w-full sm:w-auto bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400">
-                        Sair
-                    </button>
+                    <div class="flex gap-2 mt-2 sm:mt-0">
+                        <button id="btn-prof-list-all" class="w-full sm:w-auto bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                            Listar Todos
+                        </button>
+                        <button id="btn-prof-logout" class="w-full sm:w-auto bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                            Sair
+                        </button>
+                    </div>
                 </header>
 
                 <!-- Barra de Busca -->
@@ -1528,6 +1533,7 @@ const firebaseConfig = {
     </script>
 </body>
 </html>
+
 
 
 
