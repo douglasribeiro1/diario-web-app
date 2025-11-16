@@ -1115,16 +1115,25 @@ const firebaseConfig = {
         }
         
         /** Lista todos os pacientes do índice (teste de 'list') */
-        async function listAllPatients() {
-            // Limpa a tela
-            clearProfPatientView();
-            document.getElementById('patient-data-view').classList.add('hidden'); // Garante que a view de um paciente está escondida
-            
-            const listEl = document.getElementById('patient-list-ul');
-            const listViewEl = document.getElementById('patient-list-view');
-            const indexRef = function getPublicIndexRef() {
-  return collection(db, `artifacts/${appId}/public/data/patientIndex`);
+import { getDocs } from "firebase/firestore";
+
+async function listAllPatients() {
+  try {
+    // Executa a função para obter a referência da coleção
+    const snap = await getDocs(getPublicIndexRef());
+
+    const patients = snap.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    renderPatientList(patients);
+  } catch (e) {
+    console.error("Erro ao LISTAR pacientes:", e);
+    showPermissionError("Permissão negada ou caminho incorreto.");
+  }
 }
+
 
                 
             listEl.innerHTML = '<li class="text-gray-500">Buscando...</li>';
@@ -1595,4 +1604,5 @@ const firebaseConfig = {
     </script>
 </body>
 </html>
+
 
