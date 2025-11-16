@@ -1482,22 +1482,7 @@
     MUDANÇA IMPORTANTE: O login anônimo foi REMOVIDO. O paciente agora
     cria uma conta permanente com Email/Senha.
     
-    PASSO 1: CONFIGURAR O ÍNDICE DE BUSCA (OBRIGATÓRIO)
-    
-    Para o profissional poder buscar pelo Nº de Prontuário, o Firestore
-    precisa de um índice.
-    
-    1. Vá ao Console do Firebase -> Firestore Database -> "Indexes" (Índices).
-    2. Clique em "Create Index" (Criar índice).
-    3. Collection ID: `patientIndex`
-    4. Fields to index (Campos):
-       - Campo 1: `medicalRecord` (Ordem: Ascending)
-       - Campo 2: `createdAt` (Ordem: Descending)
-    5. Deixe o escopo como "Collection" e clique em "Create".
-    
-    (Isto pode demorar alguns minutos a construir)
-    
-    PASSO 2: CONFIGURAR O PROFISSIONAL (ADMIN)
+    PASSO 1: CONFIGURAR O PROFISSIONAL (ADMIN)
     (O mesmo que antes)
     
     1. Vá a Authentication -> "Add user" -> Crie o profissional (email/senha).
@@ -1507,10 +1492,11 @@
     5. Document ID: (Cole o UID do profissional aqui)
     6. Clique em "Save".
     
-    PASSO 3: REGRAS DE SEGURANÇA (ATUALIZADAS)
+    PASSO 2: REGRAS DE SEGURANÇA (ATUALIZADAS)
     
     Copie e cole isto na aba "Rules" do Firestore. Elas foram atualizadas
-    para o novo modelo de login (sem anônimos).
+    para o novo modelo de login (sem anónimos) e para a nova forma de
+    indexação (usando o prontuário como ID).
 
     ================ INÍCIO DAS REGRAS DO FIRESTORE (VERSÃO LOGIN PERMANENTE) ================
     rules_version = '2';
@@ -1553,6 +1539,7 @@
           }
           
           // --- REGRAS DO ÍNDICE PÚBLICO (PARA BUSCA) ---
+          // O ID do documento {prontuarioId} DEVE SER o n° do prontuário
           match /public/data/patientIndex/{prontuarioId} {
             // Um paciente só pode criar um índice se o ID do
             // documento (o prontuário) corresponder ao que está
