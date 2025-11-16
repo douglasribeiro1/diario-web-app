@@ -796,7 +796,7 @@ const firebaseConfig = {
                 const indexDocRef = doc(indexRef, prontuario);
                 batch.set(indexDocRef, indexData);
                 
-                await batch.write();
+                await batch.commit();
                 
                 console.log('Paciente e índice cadastrados!');
                 checkPatientData(currentUserId); // Recarrega os dados
@@ -1528,4 +1528,5 @@ const firebaseConfig = {
     </script>
 </body>
 </html>
+
 
