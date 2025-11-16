@@ -62,11 +62,11 @@
                 <p class="text-xl text-gray-600 mt-2 mb-10">Você é Paciente ou Profissional de Saúde?</p>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- CORREÇÃO 1: Emoji de paciente removido -->
+                    <!-- Emoji de paciente removido -->
                     <button id="btn-go-patient" class="flex flex-col items-center justify-center p-8 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 transition-all duration-300 transform hover:scale-105">
                         <span class="text-2xl font-semibold">Paciente</span>
                     </button>
-                    <!-- CORREÇÃO 1: Emoji de profissional removido -->
+                    <!-- Emoji de profissional removido -->
                     <button id="btn-go-prof" class="flex flex-col items-center justify-center p-8 bg-gray-700 text-white rounded-lg shadow-lg hover:bg-gray-800 transition-all duration-300 transform hover:scale-105">
                         <span class="text-2xl font-semibold">Profissional</span>
                     </button>
@@ -101,7 +101,7 @@
                         </button>
                     </div>
                 </form>
-                <!-- CORREÇÃO 2: Botão "Voltar" adicionado -->
+                <!-- Botão "Voltar" adicionado -->
                 <button id="btn-reg-back-to-home" class="mt-4 text-sm text-center w-full text-blue-600 hover:underline">Voltar</button>
             </div>
         </div>
@@ -303,7 +303,7 @@
             onAuthStateChanged,
             signInWithEmailAndPassword,
             signOut
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"; // <-- CORRIGIDO
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"; // <-- CORRIGIDO (estava https_www... antes)
         import { 
             getFirestore, 
             doc, 
@@ -556,19 +556,37 @@
             try {
                 // Se um profissional estiver logado, faz logout primeiro
                 if (auth.currentUser && !auth.currentUser.isAnonymous) {
+                    console.log("Profissional logado. A fazer logout...");
                     await signOut(auth);
+                    // O listener onAuthStateChanged vai detetar o logout, e depois o login anônimo.
+                    await signInAnonymously(auth);
+                    return; // Deixa o listener tratar do resto
                 }
                 
                 showScreen('loading');
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    // Só loga anonimamente se JÁ não estiver logado anonimamente
-                    if (!auth.currentUser) { 
-                        await signInAnonymously(auth);
-                    }
+
+                // CORREÇÃO: Se já for anônimo, não faz login de novo.
+                // Apenas executa a verificação de registo.
+                if (auth.currentUser && auth.currentUser.isAnonymous) {
+                    console.log("Usuário já é anônimo. Verificando cadastro...");
+                    await checkPatientRegistration(); // Apenas roda a verificação
+                    return; // Termina aqui, pois não há mudança de auth
                 }
-                // onAuthStateChanged vai lidar com o resto
+
+                // Se não tem usuário, loga anonimamente
+                if (!auth.currentUser) {
+                    console.log("Nenhum usuário. A fazer login anônimo...");
+                    await signInAnonymously(auth);
+                    // onAuthStateChanged vai lidar com o resto
+                    return;
+                }
+
+                // Fallback para token (se existir)
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                     await signInWithCustomToken(auth, __initial_auth_token);
+                     // onAuthStateChanged vai lidar com o resto
+                }
+                
             } catch (error) {
                 console.error("Erro no login do paciente:", error);
                 showScreen('home');
