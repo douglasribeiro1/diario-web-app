@@ -259,15 +259,15 @@
                         <h2 class="text-2xl font-bold text-blue-700 mb-4">Dados do Paciente</h2>
                         <!-- Botão PDF Retirado -->
                     </div>
-                    <!-- CORREÇÃO: Este container agora mostra o perfil do *primeiro* paciente encontrado -->
+                    <!-- Este container agora mostra o perfil do *primeiro* paciente encontrado -->
                     <div id="prof-patient-profile" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
                         <!-- Dados do perfil do paciente aqui -->
                     </div>
                 </div>
 
                 <!-- Diário do Paciente (visão do prof) -->
-                <!-- CORREÇÃO: Este container agora agrupa *múltiplas* sessões -->
-                <h3 class="text-xl font-semibold text-gray-700 mb-4">Sessões do Diário</h3>
+                <!-- Este container agora agrupa *múltiplas* sessões -->
+                <h3 class="text-xl font-semibold text-gray-700 mb-4">Diário Consolidado</h3>
                 <div id="prof-days-container" class="space-y-8">
                     <!-- Dias do paciente carregados aqui -->
                 </div>
@@ -335,8 +335,7 @@
         let app, db, auth;
         let userId = null; // UID do Firebase (paciente ou profissional)
         let isProfessional = false;
-        // CORREÇÃO: O listener do profissional agora é um array
-        let currentPatientDataUnsubscribes = []; 
+        // MUDANÇA: Não usamos mais 'onSnapshot' para o profissional, então o array foi removido.
         let currentPatientDiaryUnsubscribe = null; // Listener do diário (visão do paciente)
 
         // Configuração do Firebase (puxada do ambiente)
@@ -758,13 +757,14 @@
          * Cria e retorna um elemento HTML para um cartão de dia
          * @param {object} day Objeto do dia
          * @param {string} view 'patient' ou 'prof'
-         * @param {string|null} [sessionInfo=null] Info extra para o profissional
+         * @param {Array|null} [sessions=null] Array de sessões (para visão do prof)
          */
-        function createDayCard(day, view = 'patient', sessionInfo = null) {
+        function createDayCard(day, view = 'patient') {
             const dayCard = document.createElement('div');
             dayCard.className = 'bg-white p-4 md:p-6 rounded-xl shadow-lg';
             dayCard.dataset.dayId = day.id; // day.id é a data YYYY-MM-DD
 
+            // 'day' já contém os dados agrupados (intake/output)
             const calculations = calculateDayStats(day);
             const readableDate = new Date(day.date + 'T00:00:00').toLocaleDateString('pt-BR', { timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric' });
 
@@ -775,16 +775,22 @@
             });
 
             // Ordena entradas e saídas por data/hora
+            // (Isto é importante pois agora vêm de múltiplas sessões)
             const sortedIntake = [...day.intake].sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
             const sortedOutput = [...day.output].sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
 
-            // Adiciona o cabeçalho da sessão se for visão do profissional
-            const sessionHeader = (view === 'prof' && sessionInfo) 
-                ? `<div class="mb-2 p-2 bg-gray-100 rounded-md">
-                     <p class="text-sm font-semibold text-gray-700">Sessão de: ${sessionInfo.date}</p>
-                     <p class="text-xs text-gray-500">ID da Sessão: ${sessionInfo.userId}</p>
-                   </div>` 
-                : '';
+            // CORREÇÃO: Cria o cabeçalho de sessão agrupada
+            const isMerged = view === 'prof' && day.sessions && day.sessions.length > 0;
+            let sessionHeader = '';
+            if (isMerged) {
+                sessionHeader = `
+                   <div class="mb-2 p-2 bg-gray-100 rounded-md border border-gray-200">
+                     <p class="text-sm font-semibold text-gray-700">Dados combinados de ${day.sessions.length} sessões:</p>
+                     <ul class="list-disc list-inside text-xs text-gray-500 mt-1">
+                       ${day.sessions.map(s => `<li>Sessão de ${formatDateTimeReadable(s.createdAt)} (ID: ...${s.patientUserId.slice(-5)})</li>`).join('')}
+                     </ul>
+                   </div>`;
+            }
 
             dayCard.innerHTML = `
                 ${sessionHeader}
@@ -806,7 +812,7 @@
 
                 <!-- Estatísticas -->
                 <div class="mb-6">
-                    <h4 class="text-lg font-semibold mb-3 text-gray-700">Resumo do Dia</h4>
+                    <h4 class="text-lg font-semibold mb-3 text-gray-700">Resumo do Dia (Consolidado)</h4>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div class="bg-blue-50 p-3 rounded-lg text-center">
                             <span class="block text-sm text-blue-800 font-medium">Entradas</span>
@@ -832,7 +838,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Entradas -->
                     <div>
-                        <h4 class="text-lg font-semibold mb-3 text-blue-700">Entradas (Ingestão)</h4>
+                        <h4 class="text-lg font-semibold mb-3 text-blue-700">Entradas (Consolidado)</h4>
                         <ul id="intake-list-${day.id}" class="space-y-2">
                             ${sortedIntake.length === 0 ? '<li class="text-gray-500 text-sm">Nenhuma entrada registrada.</li>' : ''}
                             ${sortedIntake.map(entry => createEntryItem(entry, 'intake', day.id, view)).join('')}
@@ -840,7 +846,7 @@
                     </div>
                     <!-- Saídas -->
                     <div>
-                        <h4 class="text-lg font-semibold mb-3 text-orange-700">Saídas (Micção)</h4>
+                        <h4 class="text-lg font-semibold mb-3 text-orange-700">Saídas (Consolidado)</h4>
                         <ul id="output-list-${day.id}" class="space-y-2">
                             ${sortedOutput.length === 0 ? '<li class="text-gray-500 text-sm">Nenhuma saída registrada.</li>' : ''}
                             ${sortedOutput.map(entry => createEntryItem(entry, 'output', day.id, view)).join('')}
@@ -857,6 +863,7 @@
                 dayCard.querySelectorAll('.btn-edit-entry').forEach(btn => {
                     btn.onclick = (e) => {
                         const { dayId, entryType, entryId } = e.currentTarget.dataset;
+                        // Na visão do paciente, 'day' é o objeto original (não agrupado)
                         const entry = day[entryType].find(item => item.id === entryId);
                         showEntryModal(entryType, dayId, entry);
                     };
@@ -868,7 +875,7 @@
                     };
                 });
             } else {
-                 // Nada aqui por enquanto
+                 // Na visão do profissional, não há edição/delete
             }
 
             return dayCard;
@@ -1197,10 +1204,7 @@
          */
         async function handleProfLogout() {
             try {
-                // CORREÇÃO: Limpa os listeners antigos
-                currentPatientDataUnsubscribes.forEach(unsub => unsub());
-                currentPatientDataUnsubscribes = [];
-
+                // MUDANÇA: Não há mais listeners para limpar
                 await signOut(auth);
                 // Limpa dados da tela
                 document.getElementById('patient-data-container').classList.add('hidden');
@@ -1214,7 +1218,7 @@
         }
         
         /**
-         * CORREÇÃO: Retorna os dados de TODAS as sessões de um prontuário
+         * Retorna os dados de TODAS as sessões de um prontuário
          */
         async function getPatientSessionsByProntuario(prontuario) {
             const status = document.getElementById('search-status');
@@ -1256,19 +1260,15 @@
         }
         
         /**
-         * CORREÇÃO: Lida com a busca de múltiplas sessões
+         * Lida com a busca de múltiplas sessões
          */
         async function handlePatientSearch(event) {
             event.preventDefault();
             const prontuario = sanitize(document.getElementById('search-prontuario').value);
             if (!prontuario) return;
 
-            // Limpa os listeners antigos
-            currentPatientDataUnsubscribes.forEach(unsub => unsub());
-            currentPatientDataUnsubscribes = [];
             // Limpa o container de dias
             document.getElementById('prof-days-container').innerHTML = '';
-
 
             const patientSessions = await getPatientSessionsByProntuario(prontuario);
 
@@ -1292,10 +1292,8 @@
                     });
                 }
 
-                // Inicia os listeners real-time para o diário de CADA sessão
-                patientSessions.forEach(session => {
-                    loadPatientDiaryForProf(session.patientUserId, session.createdAt);
-                });
+                // CORREÇÃO: Chama a nova função de carregamento e agrupamento
+                loadAndMergeAllPatientData(patientSessions);
 
             } else {
                 document.getElementById('patient-data-container').classList.add('hidden');
@@ -1316,58 +1314,72 @@
         }
 
         /**
-         * CORREÇÃO: Carrega o diário de UMA sessão do paciente para o profissional
-         * @param {string} patientUserId O UID da sessão anônima
-         * @param {string} sessionDate Data de criação da sessão (para info)
+         * CORREÇÃO: Nova função para carregar, agrupar e renderizar os dados do profissional
+         * @param {Array} sessions Array de objetos de sessão (do patientIndex)
          */
-        function loadPatientDiaryForProf(patientUserId, sessionDate) {
+        async function loadAndMergeAllPatientData(sessions) {
             const container = document.getElementById('prof-days-container');
-            
-            const daysCollectionRef = collection(db, "artifacts", appId, "users", patientUserId, "diaryDays");
-            const q = query(daysCollectionRef);
-            
-            const sessionInfo = {
-                userId: patientUserId,
-                date: formatDateTimeReadable(sessionDate)
-            };
+            container.innerHTML = '<p class="text-center text-gray-500">Carregando e processando todos os diários...</p>';
 
-            const unsubscribe = onSnapshot(q, (querySnapshot) => {
-                const days = [];
-                querySnapshot.forEach((doc) => {
-                    days.push({ id: doc.id, ...doc.data() });
+            const mergedDays = {}; // Objeto que irá agrupar os dias por data (ex: "2025-11-16")
+
+            try {
+                // 1. Criar um array de promessas para buscar TODOS os dias de TODAS as sessões
+                const allDayPromises = sessions.map(session => {
+                    const daysCollectionRef = collection(db, "artifacts", appId, "users", session.patientUserId, "diaryDays");
+                    return getDocs(daysCollectionRef);
                 });
-                days.sort((a, b) => new Date(b.date) - new Date(a.date));
-                
-                if (days.length === 0) {
-                    // Não mostra nada se esta sessão específica não tiver dias
+
+                // 2. Esperar que todas as buscas terminem
+                const allSessionSnapshots = await Promise.all(allDayPromises);
+
+                // 3. Processar e agrupar os dados
+                allSessionSnapshots.forEach((sessionSnapshot, index) => {
+                    const sessionInfo = sessions[index]; // Pega a info da sessão (data, userId)
+
+                    sessionSnapshot.forEach(dayDoc => {
+                        const dayData = dayDoc.data();
+                        const date = dayData.date; // A data YYYY-MM-DD
+
+                        // Se é a primeira vez que vemos este dia, cria a estrutura
+                        if (!mergedDays[date]) {
+                            mergedDays[date] = {
+                                id: date, // Usa a data como ID
+                                date: date,
+                                intake: [],
+                                output: [],
+                                sessions: [] // Guarda de quais sessões este dia veio
+                            };
+                        }
+
+                        // Agrupa (combina) os arrays de intake e output
+                        mergedDays[date].intake.push(...dayData.intake);
+                        mergedDays[date].output.push(...dayData.output);
+                        mergedDays[date].sessions.push(sessionInfo);
+                    });
+                });
+
+                // 4. Renderizar os dados agrupados
+                container.innerHTML = ''; // Limpa o "carregando"
+
+                const sortedDates = Object.keys(mergedDays).sort().reverse(); // Ordena (mais recente primeiro)
+
+                if (sortedDates.length === 0) {
+                    container.innerHTML = '<p class="text-center text-gray-500 bg-white p-6 rounded-xl shadow-md">Este paciente não possui registros em nenhuma sessão.</p>';
                     return;
                 }
-                
-                // Encontra ou cria o container para esta sessão
-                let sessionContainerId = `session-container-${patientUserId}`;
-                let sessionContainer = document.getElementById(sessionContainerId);
-                if (!sessionContainer) {
-                    sessionContainer = document.createElement('div');
-                    sessionContainer.id = sessionContainerId;
-                    sessionContainer.className = 'session-group mb-8'; // Adiciona espaço entre sessões
-                    container.appendChild(sessionContainer);
-                }
-                
-                sessionContainer.innerHTML = ''; // Limpa apenas esta sessão para recarregar
-                
-                days.forEach(day => {
-                    // Passa a info da sessão para o cartão
-                    const dayCard = createDayCard(day, 'prof', sessionInfo);
-                    sessionContainer.appendChild(dayCard);
-                });
-                
-            }, (error) => {
-                console.error(`Erro ao carregar diário (prof) para ${patientUserId}:`, error);
-                container.innerHTML += `<p class="text-red-600">Erro ao carregar diário da sessão ${patientUserId}.</p>`;
-            });
 
-            // Guarda a função de unsubscribe
-            currentPatientDataUnsubscribes.push(unsubscribe);
+                sortedDates.forEach(date => {
+                    const dayData = mergedDays[date];
+                    // 'dayData' agora contém os arrays combinados e a lista de sessões
+                    const dayCard = createDayCard(dayData, 'prof');
+                    container.appendChild(dayCard);
+                });
+
+            } catch (error) {
+                console.error("Erro ao carregar e agrupar dados do paciente:", error);
+                container.innerHTML = `<p class="text-red-600">Erro ao processar o diário: ${error.message}</p>`;
+            }
         }
         
 
