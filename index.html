@@ -62,11 +62,9 @@
                 <p class="text-xl text-gray-600 mt-2 mb-10">Você é Paciente ou Profissional de Saúde?</p>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Emoji de paciente removido -->
                     <button id="btn-go-patient" class="flex flex-col items-center justify-center p-8 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 transition-all duration-300 transform hover:scale-105">
                         <span class="text-2xl font-semibold">Paciente</span>
                     </button>
-                    <!-- Emoji de profissional removido -->
                     <button id="btn-go-prof" class="flex flex-col items-center justify-center p-8 bg-gray-700 text-white rounded-lg shadow-lg hover:bg-gray-800 transition-all duration-300 transform hover:scale-105">
                         <span class="text-2xl font-semibold">Profissional</span>
                     </button>
@@ -74,12 +72,56 @@
             </div>
         </div>
 
-        <!-- TELA DE CADASTRO DO PACIENTE -->
+        <!-- TELA DE LOGIN DO PACIENTE (NOVO) -->
+        <div id="patient-login-screen" class="hidden min-h-screen flex items-center justify-center p-4 bg-blue-50">
+            <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md">
+                <h2 class="text-2xl font-bold text-center text-blue-700 mb-6">Login do Paciente</h2>
+                <form id="patient-login-form">
+                    <div class="space-y-4">
+                        <div>
+                            <label for="login-email-patient" class="block text-sm font-medium text-gray-700">Email</label>
+                            <input type="email" id="login-email-patient" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                        <div>
+                            <label for="login-password-patient" class="block text-sm font-medium text-gray-700">Senha</label>
+                            <input type="password" id="login-password-patient" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                        <button type="submit" id="btn-login-submit-patient" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300 disabled:opacity-50">
+                            Entrar
+                        </button>
+                        <p id="login-error-patient" class="text-red-600 text-sm hidden"></p>
+                    </div>
+                </form>
+                <div class="mt-4 text-sm text-center">
+                    <button id="btn-go-to-register" class="text-blue-600 hover:underline">Ainda não tenho conta. Registar.</button>
+                </div>
+                <div class="mt-2 text-sm text-center">
+                    <button id="btn-forgot-password" class="text-gray-500 hover:underline">Esqueci a minha senha</button>
+                </div>
+                <button id="btn-patient-login-back" class="mt-4 text-sm text-center w-full text-blue-600 hover:underline">Voltar</button>
+            </div>
+        </div>
+
+        <!-- TELA DE CADASTRO DO PACIENTE (MODIFICADO) -->
         <div id="patient-register-screen" class="hidden min-h-screen flex items-center justify-center p-4">
             <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg">
                 <h2 class="text-2xl font-bold text-center text-blue-700 mb-6">Cadastro do Paciente</h2>
                 <form id="patient-register-form">
                     <div class="space-y-4">
+                        
+                        <!-- Campos de Login -->
+                        <div>
+                            <label for="reg-email" class="block text-sm font-medium text-gray-700">Email</label>
+                            <input type="email" id="reg-email" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                        <div>
+                            <label for="reg-password" class="block text-sm font-medium text-gray-700">Senha (mínimo 6 caracteres)</label>
+                            <input type="password" id="reg-password" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                        
+                        <hr class="my-4">
+
+                        <!-- Campos do Perfil -->
                         <div>
                             <label for="reg-prontuario" class="block text-sm font-medium text-gray-700">Nº Prontuário</label>
                             <input type="text" id="reg-prontuario" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
@@ -96,13 +138,16 @@
                             <label for="reg-medicamentos" class="block text-sm font-medium text-gray-700">Medicamentos em Uso (separe por vírgula)</label>
                             <textarea id="reg-medicamentos" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
                         </div>
-                        <button type="submit" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300">
-                            Salvar e Iniciar Diário
+                        
+                        <p id="register-error-patient" class="text-red-600 text-sm hidden"></p>
+
+                        <button type="submit" id="btn-register-submit-patient" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300">
+                            Criar Conta e Iniciar Diário
                         </button>
                     </div>
                 </form>
-                <!-- Botão "Voltar" adicionado -->
-                <button id="btn-reg-back-to-home" class="mt-4 text-sm text-center w-full text-blue-600 hover:underline">Voltar</button>
+                <!-- Botão "Voltar" (agora volta para o login de paciente) -->
+                <button id="btn-reg-back-to-login" class="mt-4 text-sm text-center w-full text-blue-600 hover:underline">Já tenho conta. Fazer Login.</button>
             </div>
         </div>
 
@@ -118,7 +163,7 @@
                     <button id="btn-add-day" class="w-full sm:w-auto bg-green-600 text-white py-2 px-5 rounded-lg font-semibold shadow-md hover:bg-green-700 transition-all duration-300">
                         + Adicionar Dia
                     </button>
-                    <!-- BOTÃO DE SAIR ADICIONADO -->
+                    <!-- BOTÃO DE SAIR (agora faz logout permanente) -->
                     <button id="btn-patient-logout" class="w-full sm:w-auto bg-red-600 text-white py-2 px-5 rounded-lg font-semibold shadow-md hover:bg-red-700 transition-all duration-300">
                         Sair
                     </button>
@@ -266,8 +311,8 @@
                 </div>
 
                 <!-- Diário do Paciente (visão do prof) -->
-                <!-- Este container agora agrupa *múltiplas* sessões -->
-                <h3 class="text-xl font-semibold text-gray-700 mb-4">Diário Consolidado</h3>
+                <!-- A lógica de agrupamento foi removida, é uma visualização direta -->
+                <h3 class="text-xl font-semibold text-gray-700 mb-4">Diário (em tempo real)</h3>
                 <div id="prof-days-container" class="space-y-8">
                     <!-- Dias do paciente carregados aqui -->
                 </div>
@@ -308,10 +353,11 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { 
             getAuth, 
-            signInAnonymously, 
-            signInWithCustomToken, 
+            // MODIFICADO: signInAnonymously e signInWithCustomToken removidos
             onAuthStateChanged,
             signInWithEmailAndPassword,
+            createUserWithEmailAndPassword, // Adicionado
+            sendPasswordResetEmail,      // Adicionado
             signOut
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
@@ -335,7 +381,9 @@
         let app, db, auth;
         let userId = null; // UID do Firebase (paciente ou profissional)
         let isProfessional = false;
-        // MUDANÇA: Não usamos mais 'onSnapshot' para o profissional, então o array foi removido.
+        
+        // MODIFICADO: A lógica complexa de cache foi removida.
+        let currentProfListenerUnsubscribe = null; // Agora é apenas UM listener.
         let currentPatientDiaryUnsubscribe = null; // Listener do diário (visão do paciente)
 
         // Configuração do Firebase (puxada do ambiente)
@@ -356,6 +404,7 @@
         const screens = {
             loading: document.getElementById('loading-screen'),
             home: document.getElementById('home-screen'),
+            patientLogin: document.getElementById('patient-login-screen'), // NOVO
             patientRegister: document.getElementById('patient-register-screen'),
             patientDiary: document.getElementById('patient-diary-screen'),
             profLogin: document.getElementById('prof-login-screen'),
@@ -504,21 +553,15 @@
                             // Usuário está logado
                             userId = user.uid;
                             
-                            // *** LÓGICA DE VERIFICAÇÃO (MAIS FÁCIL) ***
+                            // *** LÓGICA DE VERIFICAÇÃO SIMPLIFICADA ***
+                            // (O login anônimo foi removido, então 'user' é sempre permanente)
                             
-                            // Esta verificação só acontece se o usuário NÃO for anônimo
-                            if (!user.isAnonymous) {
-                                const adminDocRef = doc(db, "administradores", user.uid);
-                                const adminDocSnap = await getDoc(adminDocRef);
+                            const adminDocRef = doc(db, "administradores", user.uid);
+                            const adminDocSnap = await getDoc(adminDocRef);
 
-                                if (adminDocSnap.exists()) {
-                                    isProfessional = true;
-                                } else {
-                                    // Se não está na lista de admin, não é profissional
-                                    isProfessional = false;
-                                }
+                            if (adminDocSnap.exists()) {
+                                isProfessional = true;
                             } else {
-                                // Se é anônimo, é paciente
                                 isProfessional = false;
                             }
                             
@@ -533,7 +576,7 @@
                                 document.getElementById('btn-prof-logout').onclick = handleProfLogout;
                                 showScreen('profDashboard');
                             } else {
-                                // É PACIENTE (ou profissional que ainda não se promoveu)
+                                // É PACIENTE
                                 console.log("Usuário é Paciente");
                                 isProfessional = false; 
                                 await checkPatientRegistration();
@@ -546,8 +589,6 @@
                         }
                     } catch (error) {
                         console.error("Erro no listener de autenticação (onAuthStateChanged):", error);
-                        // Se algo der errado (ex: falha de rede ao checar admin),
-                        // envia o usuário para a tela inicial para evitar que fique preso.
                         showScreen('home');
                         showModal("Erro de Autenticação", "Ocorreu um erro ao verificar sua sessão. Por favor, tente novamente.", { confirmText: "OK", cancelText: null });
                     }
@@ -560,61 +601,22 @@
         }
         
         /**
-         * Faz o login do paciente (anônimo ou com token)
+         * (MODIFICADO) Apenas mostra o ecrã de login do paciente
          */
-        async function signInPatient() {
-            try {
-                // Se um profissional estiver logado, faz logout primeiro
-                if (auth.currentUser && !auth.currentUser.isAnonymous) {
-                    console.log("Profissional logado. A fazer logout...");
-                    await signOut(auth);
-                    // O onAuthStateChanged vai detetar o logout, e depois o login anônimo.
-                    await signInAnonymously(auth);
-                    return; // Deixa o listener tratar do resto
-                }
-                
-                showScreen('loading');
-
-                // CORREÇÃO: Se já for anônimo, não faz login de novo.
-                // Apenas executa a verificação de registo.
-                if (auth.currentUser && auth.currentUser.isAnonymous) {
-                    console.log("Usuário já é anônimo. Verificando cadastro...");
-                    await checkPatientRegistration(); // Apenas roda a verificação
-                    return; // Termina aqui, pois não há mudança de auth
-                }
-
-                // Se não tem usuário, loga anonimamente
-                if (!auth.currentUser) {
-                    console.log("Nenhum usuário. A fazer login anônimo...");
-                    await signInAnonymously(auth);
-                    // onAuthStateChanged vai lidar com o resto
-                    return;
-                }
-
-                // Fallback para token (se existir)
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                     await signInWithCustomToken(auth, __initial_auth_token);
-                     // onAuthStateChanged vai lidar com o resto
-                }
-                
-            } catch (error) {
-                console.error("Erro no login do paciente:", error);
-                showScreen('home');
-                showModal("Erro de Login", "Não foi possível iniciar a sessão. Tente novamente.", { confirmText: "OK", cancelText: null });
-            }
+        function goToPatientLogin() {
+            showScreen('patientLogin');
         }
         
         /**
-         * Verifica se o paciente já tem cadastro
+         * Verifica se o paciente já tem cadastro de perfil (Firestore)
+         * (Assumindo que ele já está autenticado)
          */
         async function checkPatientRegistration() {
             if (!userId) return;
             
             showScreen('loading');
             try {
-                // Esta lógica está correta. A sessão anônima (userId) é o "dono" do perfil.
-                // Se o usuário faz logout, um novo userId é gerado, e ele não
-                // encontrará este perfil, indo para o registo (comportamento "zerado").
+                // O userId agora é o UID permanente da conta
                 const profileDocRef = doc(db, "artifacts", appId, "users", userId, "patientProfile", "profile");
                 const docSnap = await getDoc(profileDocRef);
 
@@ -623,7 +625,7 @@
                     loadPatientDiary(userId);
                     showScreen('patientDiary');
                 } else {
-                    // Novo paciente, vai para o cadastro
+                    // Novo paciente (só tem conta, falta perfil), vai para o cadastro
                     showScreen('patientRegister');
                 }
             } catch (error) {
@@ -633,65 +635,167 @@
         }
         
         // --- Fluxo do Paciente ---
+
+        /**
+         * (NOVO) Lida com o login do paciente (Email/Senha)
+         */
+        async function handlePatientLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('login-email-patient').value;
+            const password = document.getElementById('login-password-patient').value;
+            const errorP = document.getElementById('login-error-patient');
+            const submitBtn = document.getElementById('btn-login-submit-patient');
+
+            errorP.classList.add('hidden');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Entrando...';
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                // Sucesso! O onAuthStateChanged vai tratar de o redirecionar.
+            } catch (error) {
+                console.error("Erro de login (paciente):", error.code);
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                    errorP.textContent = 'Email ou senha inválidos.';
+                } else {
+                    errorP.textContent = 'Erro ao fazer login. Tente novamente.';
+                }
+                errorP.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Entrar';
+            }
+        }
         
         /**
-         * Lida com o registro do paciente
+         * (MODIFICADO) Lida com o registro do paciente (Cria Auth + Perfil)
          */
         async function handlePatientRegister(event) {
             event.preventDefault();
+            
+            // Novos campos de Auth
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+            
+            // Campos de Perfil
             const prontuario = sanitize(document.getElementById('reg-prontuario').value);
             const nome = sanitize(document.getElementById('reg-nome').value);
             const idade = sanitize(document.getElementById('reg-idade').value);
             const medicamentos = sanitize(document.getElementById('reg-medicamentos').value);
+            
+            const errorP = document.getElementById('register-error-patient');
+            const submitBtn = document.getElementById('btn-register-submit-patient');
+            errorP.classList.add('hidden');
 
-            if (!prontuario || !nome || !idade) {
-                showModal("Campos Obrigatórios", "Por favor, preencha Prontuário, Nome e Idade.", { confirmText: "OK", cancelText: null });
+            if (!prontuario || !nome || !idade || !email || !password) {
+                errorP.textContent = "Por favor, preencha todos os campos.";
+                errorP.classList.remove('hidden');
                 return;
             }
-            
-            const patientData = {
-                medicalRecord: prontuario,
-                name: nome,
-                age: parseInt(idade),
-                medications: medicamentos,
-                createdAt: new Date().toISOString()
-            };
 
-            // O índice é a chave para o profissional encontrar os dados
-            const indexData = {
-                medicalRecord: prontuario,
-                patientUserId: userId, // O ID anônimo desta sessão
-                patientName: nome,
-                createdAt: new Date().toISOString() // Adicionado para ordenação
-            };
+            submitBtn.disabled = true;
+            submitBtn.textContent = "A criar conta...";
             
-            showScreen('loading');
+            let newUserId; // Vamos precisar disto
+
             try {
-                // Salva o perfil privado (ligado ao userId anônimo)
-                const profileDocRef = doc(db, "artifacts", appId, "users", userId, "patientProfile", "profile");
+                // 1. Criar a conta de autenticação
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                newUserId = userCredential.user.uid; // O ID permanente do paciente
+
+                // 2. Preparar os dados do perfil
+                const patientData = {
+                    medicalRecord: prontuario,
+                    name: nome,
+                    age: parseInt(idade),
+                    medications: medicamentos,
+                    createdAt: new Date().toISOString(),
+                    email: email // Guardar o email no perfil
+                };
+
+                // 3. Preparar o índice para o profissional
+                const indexData = {
+                    medicalRecord: prontuario,
+                    patientUserId: newUserId, // O ID permanente
+                    patientName: nome,
+                    createdAt: new Date().toISOString()
+                };
+            
+                // 4. Salvar perfil e índice no Firestore
+                // (Usamos o newUserId para ambos os caminhos)
+                
+                const profileDocRef = doc(db, "artifacts", appId, "users", newUserId, "patientProfile", "profile");
                 await setDoc(profileDocRef, patientData);
                 
-                // Cria o índice público para busca do profissional
-                // Usamos o userId como ID do documento de índice
-                const indexDocRef = doc(db, "artifacts", appId, "public/data/patientIndex", userId);
+                // O ID do índice AGORA é o Prontuário, para garantir que é único
+                // NOTA: Isto assume que o Nº de Prontuário é ÚNICO por paciente.
+                const indexDocRef = doc(db, "artifacts", appId, "public/data/patientIndex", prontuario);
+                
+                // Antes de definir, verificamos se já existe
+                const indexSnap = await getDoc(indexDocRef);
+                if (indexSnap.exists()) {
+                    // Alguém já se registou com este prontuário
+                    throw new Error(`O Nº de Prontuário ${prontuario} já está a ser utilizado.`);
+                }
+                
                 await setDoc(indexDocRef, indexData);
 
-                // Vai para o diário
-                loadPatientDiary(userId);
-                showScreen('patientDiary');
+                // 5. Sucesso!
+                // O onAuthStateChanged vai detetar o novo login e redirecionar
+                // para o diário (passando pelo checkPatientRegistration).
                 
             } catch (error) {
-                console.error("Erro ao salvar cadastro:", error);
-                showModal("Erro no Cadastro", "Erro ao salvar cadastro. Tente novamente.", { confirmText: "OK", cancelText: null });
-                showScreen('patientRegister');
+                console.error("Erro ao registar:", error);
+                errorP.textContent = `Erro: ${error.message}`; // Mostra a mensagem de erro
+                if (error.code === 'auth/email-already-in-use') {
+                    errorP.textContent = 'Este email já está a ser utilizado por outra conta.';
+                }
+                if (error.message.includes("Prontuário")) {
+                    errorP.textContent = error.message;
+                }
+                errorP.classList.remove('hidden');
+
+                // Se o utilizador foi criado no Auth mas o Firestore falhou,
+                // idealmente devíamos apagar o utilizador do Auth (lógica complexa).
+                // Por agora, apenas mostramos o erro.
+
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Criar Conta e Iniciar Diário";
+            }
+        }
+
+        /**
+         * (NOVO) Lida com a recuperação de senha
+         */
+        async function handlePasswordReset() {
+            // Pede o email ao utilizador
+            const email = prompt("Por favor, insira o seu email para receber o link de recuperação de senha:");
+            
+            if (!email) {
+                return; // Utilizador cancelou
+            }
+
+            try {
+                await sendPasswordResetEmail(auth, email);
+                showModal("Recuperação de Senha", 
+                          `Email enviado para ${email}. Por favor, verifique a sua caixa de entrada.`,
+                          { confirmText: "OK", cancelText: null }
+                );
+            } catch (error) {
+                console.error("Erro ao enviar email de recuperação:", error);
+                showModal("Erro", "Não foi possível enviar o email. Verifique se o email está correto e tente novamente.", 
+                          { confirmText: "OK", cancelText: null, confirmColor: 'bg-red-600' }
+                );
             }
         }
 
         /**
          * Carrega o diário do paciente (com listener real-time)
-         * @param {string} patientUserId ID do paciente
+         * (Esta função permanece igual, mas agora usa o userId permanente)
          */
         function loadPatientDiary(patientUserId) {
+            // ... (A lógica interna desta função não precisa de mudar) ...
+            
             // Atualiza o header do paciente
             const patientInfo = document.getElementById('patient-info');
             const profileDocRef = doc(db, "artifacts", appId, "users", patientUserId, "patientProfile", "profile");
@@ -737,7 +841,6 @@
         
         /**
          * Renderiza os cartões dos dias na tela do paciente
-         * @param {Array} days Array de objetos de dia
          */
         function renderPatientDiary(days) {
             const container = document.getElementById('days-container');
@@ -754,17 +857,13 @@
         }
 
         /**
-         * Cria e retorna um elemento HTML para um cartão de dia
-         * @param {object} day Objeto do dia
-         * @param {string} view 'patient' ou 'prof'
-         * @param {Array|null} [sessions=null] Array de sessões (para visão do prof)
+         * (SIMPLIFICADO) Cria e retorna um elemento HTML para um cartão de dia
          */
         function createDayCard(day, view = 'patient') {
             const dayCard = document.createElement('div');
             dayCard.className = 'bg-white p-4 md:p-6 rounded-xl shadow-lg';
             dayCard.dataset.dayId = day.id; // day.id é a data YYYY-MM-DD
 
-            // 'day' já contém os dados agrupados (intake/output)
             const calculations = calculateDayStats(day);
             const readableDate = new Date(day.date + 'T00:00:00').toLocaleDateString('pt-BR', { timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric' });
 
@@ -775,25 +874,12 @@
             });
 
             // Ordena entradas e saídas por data/hora
-            // (Isto é importante pois agora vêm de múltiplas sessões)
             const sortedIntake = [...day.intake].sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
             const sortedOutput = [...day.output].sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
-
-            // CORREÇÃO: Cria o cabeçalho de sessão agrupada
-            const isMerged = view === 'prof' && day.sessions && day.sessions.length > 0;
-            let sessionHeader = '';
-            if (isMerged) {
-                sessionHeader = `
-                   <div class="mb-2 p-2 bg-gray-100 rounded-md border border-gray-200">
-                     <p class="text-sm font-semibold text-gray-700">Dados combinados de ${day.sessions.length} sessões:</p>
-                     <ul class="list-disc list-inside text-xs text-gray-500 mt-1">
-                       ${day.sessions.map(s => `<li>Sessão de ${formatDateTimeReadable(s.createdAt)} (ID: ...${s.patientUserId.slice(-5)})</li>`).join('')}
-                     </ul>
-                   </div>`;
-            }
+            
+            // O cabeçalho de sessão agrupada FOI REMOVIDO (não é mais necessário)
 
             dayCard.innerHTML = `
-                ${sessionHeader}
                 <!-- Header do Cartão -->
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 pb-4 border-b">
                     <h3 class="text-2xl font-bold text-blue-600">${readableDate}</h3>
@@ -801,18 +887,17 @@
                     <div class="flex space-x-2 mt-3 sm:mt-0">
                         <button class="btn-add-intake bg-blue-500 text-white py-2 px-4 rounded-lg font-semibold text-sm hover:bg-blue-600">+ Entrada</button>
                         <button class="btn-add-output bg-orange-500 text-white py-2 px-4 rounded-lg font-semibold text-sm hover:bg-orange-600">+ Saída</button>
-                        <!-- Botão PDF Retirado -->
                     </div>
                     ` : `
                     <div class="flex space-x-2 mt-3 sm:mt-0">
-                        <!-- Botão PDF Retirado -->
+                        <!-- Visão do Prof não tem botões de adicionar -->
                     </div>
                     `}
                 </div>
 
                 <!-- Estatísticas -->
                 <div class="mb-6">
-                    <h4 class="text-lg font-semibold mb-3 text-gray-700">Resumo do Dia (Consolidado)</h4>
+                    <h4 class="text-lg font-semibold mb-3 text-gray-700">Resumo do Dia</h4>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div class="bg-blue-50 p-3 rounded-lg text-center">
                             <span class="block text-sm text-blue-800 font-medium">Entradas</span>
@@ -838,7 +923,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Entradas -->
                     <div>
-                        <h4 class="text-lg font-semibold mb-3 text-blue-700">Entradas (Consolidado)</h4>
+                        <h4 class="text-lg font-semibold mb-3 text-blue-700">Entradas</h4>
                         <ul id="intake-list-${day.id}" class="space-y-2">
                             ${sortedIntake.length === 0 ? '<li class="text-gray-500 text-sm">Nenhuma entrada registrada.</li>' : ''}
                             ${sortedIntake.map(entry => createEntryItem(entry, 'intake', day.id, view)).join('')}
@@ -846,7 +931,7 @@
                     </div>
                     <!-- Saídas -->
                     <div>
-                        <h4 class="text-lg font-semibold mb-3 text-orange-700">Saídas (Consolidado)</h4>
+                        <h4 class="text-lg font-semibold mb-3 text-orange-700">Saídas</h4>
                         <ul id="output-list-${day.id}" class="space-y-2">
                             ${sortedOutput.length === 0 ? '<li class="text-gray-500 text-sm">Nenhuma saída registrada.</li>' : ''}
                             ${sortedOutput.map(entry => createEntryItem(entry, 'output', day.id, view)).join('')}
@@ -883,10 +968,7 @@
         
         /**
          * Cria o HTML para um item da lista (entrada ou saída)
-         * @param {object} entry Objeto da entrada/saída
-         * @param {string} type 'intake' ou 'output'
-         * @param {string} dayId ID do dia (data)
-         * @param {string} view 'patient' ou 'prof'
+         * (Esta função não muda)
          */
         function createEntryItem(entry, type, dayId, view) {
             let details = '';
@@ -923,6 +1005,7 @@
 
         /**
          * Adiciona um novo dia ao diário
+         * (Esta função não muda)
          */
         async function handleAddDay() {
             const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
@@ -955,9 +1038,7 @@
 
         /**
          * Mostra o modal para adicionar/editar uma entrada ou saída
-         * @param {string} type 'intake' ou 'output'
-         * @param {string} dayId ID do dia (data)
-         * @param {object|null} entryToEdit Objeto da entrada para editar (null se for novo)
+         * (Esta função não muda)
          */
         function showEntryModal(type, dayId, entryToEdit = null) {
             const isEditing = !!entryToEdit;
@@ -1017,6 +1098,7 @@
         
         /**
          * Lida com o submit do formulário de entrada/saída
+         * (Esta função não muda)
          */
         async function handleSubmitEntry(form, type, dayId, isEditing) {
             const formData = new FormData(form);
@@ -1084,6 +1166,7 @@
         
         /**
          * Deleta um registro de entrada ou saída
+         * (Esta função não muda)
          */
         function handleDeleteEntry(dayId, entryType, entryId) {
             showModal(
@@ -1119,8 +1202,7 @@
         
         /**
          * Calcula as estatísticas de um dia
-         * @param {object} day Objeto do dia
-         * @returns {object} Objeto com { totalIntake, totalOutput, balance, nightlyVolume, highlights }
+         * (Esta função não muda)
          */
         function calculateDayStats(day) {
             let totalIntake = 0;
@@ -1169,6 +1251,7 @@
         
         /**
          * Lida com o login do profissional
+         * (Esta função não muda)
          */
         async function handleProfLogin(event) {
             event.preventDefault();
@@ -1204,7 +1287,12 @@
          */
         async function handleProfLogout() {
             try {
-                // MUDANÇA: Não há mais listeners para limpar
+                // MODIFICADO: Limpa o listener único do profissional
+                if (currentProfListenerUnsubscribe) {
+                    currentProfListenerUnsubscribe();
+                    currentProfListenerUnsubscribe = null;
+                }
+                
                 await signOut(auth);
                 // Limpa dados da tela
                 document.getElementById('patient-data-container').classList.add('hidden');
@@ -1218,38 +1306,43 @@
         }
         
         /**
-         * Retorna os dados de TODAS as sessões de um prontuário
+         * (SIMPLIFICADO) Retorna os dados de UMA sessão (conta)
          */
-        async function getPatientSessionsByProntuario(prontuario) {
+        async function getPatientDataByProntuario(prontuario) {
             const status = document.getElementById('search-status');
             status.textContent = 'Buscando...';
             status.className = 'text-sm mt-2 text-gray-600';
 
-            const q = query(
-                collection(db, "artifacts", appId, "public/data/patientIndex"),
-                where("medicalRecord", "==", prontuario)
-            );
+            // O ID do documento de índice é o próprio prontuário
+            const indexDocRef = doc(db, "artifacts", appId, "public/data/patientIndex", prontuario);
             
             try {
-                const querySnapshot = await getDocs(q);
-                if (querySnapshot.empty) {
+                const indexSnap = await getDoc(indexDocRef);
+                if (!indexSnap.exists()) {
                     status.textContent = 'Paciente não encontrado.';
                     status.className = 'text-sm mt-2 text-red-600';
                     return null;
                 }
                 
-                const sessions = [];
-                querySnapshot.forEach(doc => {
-                    sessions.push(doc.data());
-                });
+                const patientIndex = indexSnap.data();
+                const patientUserId = patientIndex.patientUserId; // O UID permanente
 
-                // Ordena as sessões pela mais recente
-                sessions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                const profileDocRef = doc(db, "artifacts", appId, "users", patientUserId, "patientProfile", "profile");
+                const profileSnap = await getDoc(profileDocRef);
+                
+                if (!profileSnap.exists()) {
+                    status.textContent = 'Dados do paciente não encontrados (índice existe).';
+                    status.className = 'text-sm mt-2 text-red-600';
+                    return null;
+                }
 
-                status.textContent = `Encontradas ${sessions.length} sessões para: ${sessions[0].patientName}`;
+                status.textContent = `Exibindo dados de: ${profileSnap.data().name}`;
                 status.className = 'text-sm mt-2 text-green-700';
                 
-                return sessions; // Retorna um array de sessões
+                return {
+                    patientUserId: patientUserId,
+                    profile: profileSnap.data()
+                };
                 
             } catch (error) {
                 console.error("Erro na busca:", error);
@@ -1260,40 +1353,32 @@
         }
         
         /**
-         * Lida com a busca de múltiplas sessões
+         * (SIMPLIFICADO) Lida com a busca de UMA sessão
          */
         async function handlePatientSearch(event) {
             event.preventDefault();
             const prontuario = sanitize(document.getElementById('search-prontuario').value);
             if (!prontuario) return;
 
+            // Limpa o listener antigo
+            if (currentProfListenerUnsubscribe) {
+                currentProfListenerUnsubscribe();
+                currentProfListenerUnsubscribe = null;
+            }
             // Limpa o container de dias
             document.getElementById('prof-days-container').innerHTML = '';
 
-            const patientSessions = await getPatientSessionsByProntuario(prontuario);
 
-            if (patientSessions && patientSessions.length > 0) {
+            const patientData = await getPatientDataByProntuario(prontuario);
+
+            if (patientData) {
                 document.getElementById('patient-data-container').classList.remove('hidden');
                 
-                // Busca o perfil da *primeira* sessão (mais recente) para exibir os dados
-                const firstSession = patientSessions[0];
-                const profileDocRef = doc(db, "artifacts", appId, "users", firstSession.patientUserId, "patientProfile", "profile");
-                const profileSnap = await getDoc(profileDocRef);
+                // Renderiza o perfil (isto não muda)
+                renderProfPatientProfile(patientData.profile);
 
-                if (profileSnap.exists()) {
-                    renderProfPatientProfile(profileSnap.data());
-                } else {
-                    // Fallback se o perfil não for encontrado
-                    renderProfPatientProfile({
-                        name: firstSession.patientName,
-                        medicalRecord: firstSession.medicalRecord,
-                        age: "N/A",
-                        medications: "N/A"
-                    });
-                }
-
-                // CORREÇÃO: Chama a nova função de carregamento e agrupamento
-                loadAndMergeAllPatientData(patientSessions);
+                // Inicia o listener real-time para o diário DESTE paciente
+                loadPatientDiaryForProf(patientData.patientUserId);
 
             } else {
                 document.getElementById('patient-data-container').classList.add('hidden');
@@ -1314,72 +1399,44 @@
         }
 
         /**
-         * CORREÇÃO: Nova função para carregar, agrupar e renderizar os dados do profissional
-         * @param {Array} sessions Array de objetos de sessão (do patientIndex)
+         * (SIMPLIFICADO) Carrega o diário de UM paciente (real-time)
+         * @param {string} patientUserId O UID permanente do paciente
          */
-        async function loadAndMergeAllPatientData(sessions) {
+        function loadPatientDiaryForProf(patientUserId) {
             const container = document.getElementById('prof-days-container');
-            container.innerHTML = '<p class="text-center text-gray-500">Carregando e processando todos os diários...</p>';
+            
+            const daysCollectionRef = collection(db, "artifacts", appId, "users", patientUserId, "diaryDays");
+            const q = query(daysCollectionRef);
+            
+            // Limpa o listener anterior (se houver)
+            if (currentProfListenerUnsubscribe) {
+                currentProfListenerUnsubscribe();
+            }
 
-            const mergedDays = {}; // Objeto que irá agrupar os dias por data (ex: "2025-11-16")
-
-            try {
-                // 1. Criar um array de promessas para buscar TODOS os dias de TODAS as sessões
-                const allDayPromises = sessions.map(session => {
-                    const daysCollectionRef = collection(db, "artifacts", appId, "users", session.patientUserId, "diaryDays");
-                    return getDocs(daysCollectionRef);
+            currentProfListenerUnsubscribe = onSnapshot(q, (querySnapshot) => {
+                const days = [];
+                querySnapshot.forEach((doc) => {
+                    days.push({ id: doc.id, ...doc.data() });
                 });
-
-                // 2. Esperar que todas as buscas terminem
-                const allSessionSnapshots = await Promise.all(allDayPromises);
-
-                // 3. Processar e agrupar os dados
-                allSessionSnapshots.forEach((sessionSnapshot, index) => {
-                    const sessionInfo = sessions[index]; // Pega a info da sessão (data, userId)
-
-                    sessionSnapshot.forEach(dayDoc => {
-                        const dayData = dayDoc.data();
-                        const date = dayData.date; // A data YYYY-MM-DD
-
-                        // Se é a primeira vez que vemos este dia, cria a estrutura
-                        if (!mergedDays[date]) {
-                            mergedDays[date] = {
-                                id: date, // Usa a data como ID
-                                date: date,
-                                intake: [],
-                                output: [],
-                                sessions: [] // Guarda de quais sessões este dia veio
-                            };
-                        }
-
-                        // Agrupa (combina) os arrays de intake e output
-                        mergedDays[date].intake.push(...dayData.intake);
-                        mergedDays[date].output.push(...dayData.output);
-                        mergedDays[date].sessions.push(sessionInfo);
-                    });
-                });
-
-                // 4. Renderizar os dados agrupados
-                container.innerHTML = ''; // Limpa o "carregando"
-
-                const sortedDates = Object.keys(mergedDays).sort().reverse(); // Ordena (mais recente primeiro)
-
-                if (sortedDates.length === 0) {
-                    container.innerHTML = '<p class="text-center text-gray-500 bg-white p-6 rounded-xl shadow-md">Este paciente não possui registros em nenhuma sessão.</p>';
+                days.sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                if (days.length === 0) {
+                    container.innerHTML = '<p class="text-center text-gray-500 bg-white p-6 rounded-xl shadow-md">Este paciente ainda não possui registros no diário.</p>';
                     return;
                 }
-
-                sortedDates.forEach(date => {
-                    const dayData = mergedDays[date];
-                    // 'dayData' agora contém os arrays combinados e a lista de sessões
-                    const dayCard = createDayCard(dayData, 'prof');
+                
+                container.innerHTML = ''; // Limpa
+                
+                days.forEach(day => {
+                    // O "day" já é o dia correto, sem necessidade de agrupar
+                    const dayCard = createDayCard(day, 'prof');
                     container.appendChild(dayCard);
                 });
-
-            } catch (error) {
-                console.error("Erro ao carregar e agrupar dados do paciente:", error);
-                container.innerHTML = `<p class="text-red-600">Erro ao processar o diário: ${error.message}</p>`;
-            }
+                
+            }, (error) => {
+                console.error(`Erro ao carregar diário (prof) para ${patientUserId}:`, error);
+                container.innerHTML = `<p class="text-red-600">Erro ao carregar o diário. Verifique as permissões.</p>`;
+            });
         }
         
 
@@ -1388,24 +1445,29 @@
         window.onload = initializeFirebase;
 
         // Navegação Home
-        document.getElementById('btn-go-patient').onclick = signInPatient;
+        document.getElementById('btn-go-patient').onclick = goToPatientLogin; // Modificado
         document.getElementById('btn-go-prof').onclick = () => showScreen('profLogin');
-        document.getElementById('btn-back-to-home').onclick = () => showScreen('home');
-        // Listener para o novo botão "Voltar"
-        document.getElementById('btn-reg-back-to-home').onclick = () => showScreen('home');
+        
+        // Navegação Login Paciente (Novo)
+        document.getElementById('patient-login-form').onsubmit = handlePatientLogin;
+        document.getElementById('btn-go-to-register').onclick = () => showScreen('patientRegister');
+        document.getElementById('btn-forgot-password').onclick = handlePasswordReset;
+        document.getElementById('btn-patient-login-back').onclick = () => showScreen('home');
 
-        // Forms
+        // Navegação Registo Paciente (Modificado)
         document.getElementById('patient-register-form').onsubmit = handlePatientRegister;
+        document.getElementById('btn-reg-back-to-login').onclick = () => showScreen('patientLogin');
+
+        // Navegação Login Profissional
         document.getElementById('prof-login-form').onsubmit = handleProfLogin;
+        document.getElementById('btn-back-to-home').onclick = () => showScreen('home');
         document.getElementById('patient-search-form').onsubmit = handlePatientSearch;
         
-        // Botões do Diário
+        // Botões do Diário Paciente
         document.getElementById('btn-add-day').onclick = handleAddDay;
-        
-        // ADICIONADO: Listener para o botão de logout do paciente
         document.getElementById('btn-patient-logout').onclick = async () => {
             if (auth) {
-                await signOut(auth); // Faz logout do usuário anônimo/paciente
+                await signOut(auth); // Faz logout do paciente
             }
             showScreen('home'); // Volta para a tela inicial
         };
@@ -1417,65 +1479,67 @@
     INSTRUÇÕES DE CONFIGURAÇÃO DO FIREBASE (Simplificado)
     ===========================================================================================
     
-    COMO CORRIGIR O LOGIN DE PROFISSIONAL (LEIA COM ATENÇÃO):
+    MUDANÇA IMPORTANTE: O login anônimo foi REMOVIDO. O paciente agora
+    cria uma conta permanente com Email/Senha.
     
-    O erro que você viu (ir para a tela de paciente) acontece because sua conta
-    ainda não tem "permissão de profissional". O login e senha estão corretos,
-    mas o app não o reconhece como admin.
+    PASSO 1: CONFIGURAR O ÍNDICE DE BUSCA (OBRIGATÓRIO)
     
-    Siga estes 3 passos para corrigir:
+    Para o profissional poder buscar pelo Nº de Prontuário, o Firestore
+    precisa de um índice.
+    
+    1. Vá ao Console do Firebase -> Firestore Database -> "Indexes" (Índices).
+    2. Clique em "Create Index" (Criar índice).
+    3. Collection ID: `patientIndex`
+    4. Fields to index (Campos):
+       - Campo 1: `medicalRecord` (Ordem: Ascending)
+       - Campo 2: `createdAt` (Ordem: Descending)
+    5. Deixe o escopo como "Collection" e clique em "Create".
+    
+    (Isto pode demorar alguns minutos a construir)
+    
+    PASSO 2: CONFIGURAR O PROFISSIONAL (ADMIN)
+    (O mesmo que antes)
+    
+    1. Vá a Authentication -> "Add user" -> Crie o profissional (email/senha).
+    2. Copie o "User UID" dele.
+    3. Vá a Firestore Database -> "Start collection".
+    4. Collection ID: `administradores`
+    5. Document ID: (Cole o UID do profissional aqui)
+    6. Clique em "Save".
+    
+    PASSO 3: REGRAS DE SEGURANÇA (ATUALIZADAS)
+    
+    Copie e cole isto na aba "Rules" do Firestore. Elas foram atualizadas
+    para o novo modelo de login (sem anônimos).
 
-    1. CRIE O USUÁRIO PROFISSIONAL (NO FIREBASE AUTHENTICATION)
-       a. Vá ao seu Console do Firebase -> Authentication -> Users -> "Add user".
-       b. Crie o email e senha do profissional.
-       c. Copie o "User UID" (ex: "abc123xyz") do usuário que você acabou de criar.
-    
-    2. ADICIONE O PROFISSIONAL À "LISTA DE ADMINS" (NO FIRESTORE DATABASE)
-       a. Vá ao seu Console do Firebase -> Firestore Database.
-       b. Clique em "+ Start collection" (Iniciar coleção).
-       c. Digite o ID da coleção: `administradores` (tudo minúsculo e no plural).
-       d. Clique em "Next".
-       e. Em "Document ID", COLE o "User UID" que você copiou (ex: "abc123xyz").
-       f. Adicione um campo (opcional):
-          - Field: `email`
-          - Value: `email.do.profissional@exemplo.com`
-       g. Clique em "Save".
-    
-    3. ATUALIZE AS REGRAS DE SEGURANÇA (NO FIRESTORE DATABASE)
-       a. Vá ao seu Console do Firebase -> Firestore Database -> "Rules" (Regras).
-       b. Apague tudo e cole as regras abaixo. (Elas são essenciais para
-          permitir que o app verifique a lista de administradores).
-    
-    ================ INÍCIO DAS REGRAS DO FIRESTORE (VERSÃO CORRIGIDA) ================
+    ================ INÍCIO DAS REGRAS DO FIRESTORE (VERSÃO LOGIN PERMANENTE) ================
     rules_version = '2';
     
     service cloud.firestore {
       match /databases/{database}/documents {
       
-        // Função helper (usada pelas regras abaixo)
-        // Verifica se o UID do utilizador existe na coleção de administradores
+        // Função helper: Verifica se o UID do utilizador está na lista de admins
         function isProfessional() {
           return request.auth != null && 
                  exists(/databases/$(database)/documents/administradores/$(request.auth.uid));
         }
         
-        // Acesso à lista de administradores
+        // Regra para a lista de administradores
         match /administradores/{userId} {
-            // CORREÇÃO: Permite que *qualquer utilizador autenticado*
-            // verifique a existência (get) de um documento de administrador.
-            allow get: if request.auth != null; 
-            
-            // Ninguém pode listar, escrever ou apagar (isto é feito manually)
-            allow list, write, delete: if false; 
+            // Apenas utilizadores autenticados podem *verificar* (get) se um
+            // documento existe (necessário para o login).
+            allow get: if request.auth != null;
+            allow list, write, delete: if false; // Ninguém pode escrever/listar
         }
 
         // Caminho do App (use 'diario-miccional-1' ou $(appId))
         match /artifacts/{appId} {
         
           // --- REGRAS DO PACIENTE (DADOS PRIVADOS) ---
-          // O paciente só pode ler e escrever OS SEUS PRÓPRIOS dados
+          // O paciente (request.auth.uid) só pode ler e escrever
+          // os seus próprios dados (users/{userId})
           match /users/{userId}/{collection}/{docId} {
-            allow read, write: if request.auth.uid == userId;
+            allow read, write: if request.auth != null && request.auth.uid == userId;
           }
           
           // --- REGRAS DO PROFISSIONAL (LER DADOS DO PACIENTE) ---
@@ -1489,15 +1553,19 @@
           }
           
           // --- REGRAS DO ÍNDICE PÚBLICO (PARA BUSCA) ---
-          match /public/data/patientIndex/{docId} {
-            // O paciente só pode criar O SEU PRÓPRIO índice
-            allow create: if request.auth.uid == request.resource.data.patientUserId;
+          match /public/data/patientIndex/{prontuarioId} {
+            // Um paciente só pode criar um índice se o ID do
+            // documento (o prontuário) corresponder ao que está
+            // nos dados, e se for o dono dessa entrada.
+            allow create: if request.auth != null &&
+                          request.resource.data.patientUserId == request.auth.uid &&
+                          request.resource.id == request.resource.data.medicalRecord;
             
-            // O profissional pode LER (listar/buscar) o índice
-            allow list, get: if isProfessional();
+            // O profissional pode LER (buscar) o índice
+            allow get: if isProfessional();
             
-            // Ninguém pode atualizar ou apagar
-            allow update, delete: if false;
+            // Ninguém pode atualizar, apagar ou listar todos
+            allow update, delete, list: if false;
           }
         }
       }
