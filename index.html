@@ -337,8 +337,24 @@
         let currentPatientDiaryUnsubscribe = null; // Listener do diário (visão do paciente)
 
         // Configuração do Firebase (puxada do ambiente)
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'diario-miccional-default';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        // const appId = typeof __app_id !== 'undefined' ? __app_id : 'diario-miccional-default';
+        // const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+
+        // *** CORREÇÃO PARA GITHUB PAGES ***
+        // Substitua o código acima por isto e cole sua configuração abaixo:
+        const appId = 'diario-miccional-default'; // Ou o ID que você definiu no Netlify
+        
+        // ATENÇÃO: COLE SUA CONFIGURAÇÃO DO FIREBASE AQUI
+        const firebaseConfig = {
+            apiKey: "AIza...",
+            authDomain: "seu-projeto.firebaseapp.com",
+            projectId: "seu-projeto",
+            storageBucket: "seu-projeto.appspot.com",
+            messagingSenderId: "12345...",
+            appId: "1:12345:web:abcd..."
+        };
+        // *** FIM DA CORREÇÃO ***
+
 
         // --- Seletores de DOM ---
         const screens = {
@@ -492,37 +508,47 @@
 
                 // Listener principal de autenticação
                 onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        // Usuário está logado
-                        userId = user.uid;
-                        
-                        // *** CORREÇÃO DE SEGURANÇA ***
-                        // Precisamos verificar as Custom Claims para saber se é profissional.
-                        // Apenas checar `isAnonymous` não é seguro.
-                        const idTokenResult = await user.getIdTokenResult(true); // true = forçar refresh
-                        isProfessional = idTokenResult.claims.isProfessional === true;
+                    // *** INÍCIO DA CORREÇÃO DE BUG ***
+                    // Adicionado try...catch para lidar com erros de token
+                    // Se getIdTokenResult falhar, o app não ficará preso no "loading".
+                    try {
+                        if (user) {
+                            // Usuário está logado
+                            userId = user.uid; // <-- LÓGICA RESTAURADA
 
-                        if (isProfessional) {
-                            // É PROFISSIONAL
-                            console.log("Usuário é Profissional");
-                            document.getElementById('prof-info').innerHTML = `
-                                <p class="text-gray-600 text-sm">${sanitize(user.email)}</p>
-                                <button id="btn-prof-logout" class="text-sm text-red-600 hover:underline">Sair</button>
-                            `;
-                            document.getElementById('btn-prof-logout').onclick = handleProfLogout;
-                            showScreen('profDashboard');
+                            // Apenas checar `isAnonymous` não é seguro.
+                            const idTokenResult = await user.getIdTokenResult(true); // true = forçar refresh
+                            isProfessional = idTokenResult.claims.isProfessional === true;
+
+                            if (isProfessional) {
+                                // É PROFISSIONAL
+                                console.log("Usuário é Profissional");
+                                document.getElementById('prof-info').innerHTML = `
+                                    <p class="text-gray-600 text-sm">${sanitize(user.email)}</p>
+                                    <button id="btn-prof-logout" class="text-sm text-red-600 hover:underline">Sair</button>
+                                `;
+                                document.getElementById('btn-prof-logout').onclick = handleProfLogout;
+                                showScreen('profDashboard');
+                            } else {
+                                // É PACIENTE <-- LÓGICA RESTAURADA
+                                console.log("Usuário é Paciente");
+                                isProfessional = false; // Garante que é falso
+                                await checkPatientRegistration();
+                            }
                         } else {
-                            // É PACIENTE
-                            console.log("Usuário é Paciente");
-                            isProfessional = false; // Garante que é falso
-                            await checkPatientRegistration();
+                            // Ninguém logado, mostrar tela inicial
+                            userId = null;
+                            isProfessional = false;
+                            showScreen('home');
                         }
-                    } else {
-                        // Ninguém logado, mostrar tela inicial
-                        userId = null;
-                        isProfessional = false;
-                        showScreen('home');
-                    }
+                        // *** FIM DA CORREÇÃO DE BUG ***
+                    } catch (error) {
+                        console.error("Erro no listener de autenticação (onAuthStateChanged):", error);
+                            // Se algo der errado (ex: falha ao recarregar token),
+                            // envia o usuário para a tela inicial para evitar que fique preso.
+                            showScreen('home');
+                            showModal("Erro de Autenticação", "Ocorreu um erro ao verificar sua sessão. Por favor, tente novamente.", { confirmText: "OK", cancelText: null });
+                        }
                 });
 
             } catch (error) {
