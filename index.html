@@ -336,17 +336,8 @@
         let currentPatientDiaryUnsubscribe = null; // Listener do diário (visão do paciente)
 
         // Configuração do Firebase (puxada do ambiente)
-        // Estas variáveis (__app_id, __firebase_config) são injetadas pelo ambiente de hospedagem
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'diario-miccional-default';
-        const firebaseConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
-        
-        let firebaseConfig = {};
-        try {
-             firebaseConfig = JSON.parse(firebaseConfigStr);
-        } catch (e) {
-            console.error("Erro ao parsear a configuração do Firebase. Usando objeto vazio.", e);
-            document.getElementById('loading-screen').innerHTML = "<p class='text-red-600 text-center p-4'>Erro Crítico: A configuração do Firebase (`__firebase_config`) não é um JSON válido.</p>";
-        }
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
 
         // --- Seletores de DOM ---
         const screens = {
@@ -365,7 +356,6 @@
         const modalBtnCancel = document.getElementById('modal-btn-cancel');
         const modalBtnConfirm = document.getElementById('modal-btn-confirm');
         
-        // Pega as funções do jsPDF do objeto window
         const { jsPDF } = window.jspdf;
         const autoTable = window.jspdf.plugin.autotable;
 
@@ -400,7 +390,6 @@
         
         /**
          * Formata data e hora ISO para um formato local (YYYY-MM-DDTHH:MM)
-         * Usado para preencher inputs <input type="datetime-local">
          */
         function formatDateTimeLocal(isoString) {
             if (!isoString) return "";
@@ -436,43 +425,39 @@
          * Mostra o Modal genérico
          * @param {string} title Título do modal
          * @param {string|HTMLElement} body Conteúdo (texto ou elemento HTML)
-         * @param {object} options Opções (confirmText, cancelText, confirmColor, onConfirm, onCancel)
+         * @param {object} options Opções (confirmText, cancelText, confirmColor, onConfirm)
          */
         function showModal(title, body, options = {}) {
             const {
                 confirmText = 'Confirmar',
                 cancelText = 'Cancelar',
-                confirmColor = 'bg-blue-600', // Cor padrão do botão de confirmação
+                confirmColor = 'bg-blue-600',
                 onConfirm = () => {},
                 onCancel = () => hideModal()
             } = options;
 
             modalTitle.textContent = title;
             
-            // Limpa o corpo do modal
-            modalBody.innerHTML = ''; 
             if (typeof body === 'string') {
+                modalBody.innerHTML = '';
                 const p = document.createElement('p');
                 p.textContent = body;
                 modalBody.appendChild(p);
             } else if (body instanceof HTMLElement) {
-                // Se for um elemento (como um formulário clonado), anexa
+                modalBody.innerHTML = ''; // Limpa o corpo
                 modalBody.appendChild(body);
             }
 
             modalBtnConfirm.textContent = confirmText;
-            // Reseta classes de cor e adiciona a nova
             modalBtnConfirm.className = `text-white py-2 px-4 rounded-lg font-semibold shadow-md ${confirmColor}`;
             
             modalBtnCancel.textContent = cancelText;
             modalBtnCancel.style.display = cancelText ? 'inline-block' : 'none';
 
-            // Remove listeners antigos e adiciona novos para evitar duplicatas
-            // Usamos .onclick para sobrescrever listeners antigos facilmente
+            // Remove listeners antigos e adiciona novos
             modalBtnConfirm.onclick = () => {
                 onConfirm();
-                // A função onConfirm é responsável por fechar o modal (ex: hideModal())
-                // Isso permite validação de formulário antes de fechar
+                // Não esconder automaticamente, a função onConfirm pode querer validar
             };
             modalBtnCancel.onclick = onCancel;
             modalOverlay.onclick = onCancel;
@@ -493,13 +478,6 @@
          * Inicializa o Firebase e configura o listener de autenticação
          */
         async function initializeFirebase() {
-            // Verifica se a configuração foi carregada
-            if (!firebaseConfig.apiKey) {
-                console.error("Configuração do Firebase não encontrada ou inválida.");
-                document.getElementById('loading-screen').innerHTML = "<p class='text-red-600 text-center p-4'>Erro Crítico: A configuração do Firebase (`__firebase_config`) não foi carregada. O app não pode funcionar.</p>";
-                return;
-            }
-
             try {
                 app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
@@ -512,10 +490,10 @@
                         // Usuário está logado
                         userId = user.uid;
                         
-                        // Verifica se é profissional (usuários não-anônimos são profissionais)
+                        // Verifica se é profissional (baseado em ter um email, anônimos não têm)
+                        // A forma correta é usar Custom Claims, mas isso é uma aproximação
                         if (!user.isAnonymous) {
                             isProfessional = true;
-                            // Atualiza a UI do profissional
                             document.getElementById('prof-info').innerHTML = `
                                 <p class="text-gray-600 text-sm">${user.email}</p>
                                 <button id="btn-prof-logout" class="text-sm text-red-600 hover:underline">Sair</button>
@@ -523,24 +501,21 @@
                             document.getElementById('btn-prof-logout').onclick = handleProfLogout;
                             showScreen('profDashboard');
                         } else {
-                            // É paciente (anônimo ou token customizado)
+                            // É paciente (anônimo ou token)
                             isProfessional = false;
-                            // Verifica se o paciente já se cadastrou
                             await checkPatientRegistration();
                         }
                     } else {
                         // Ninguém logado, mostrar tela inicial
                         userId = null;
                         isProfessional = false;
-                        if (currentPatientDiaryUnsubscribe) currentPatientDiaryUnsubscribe();
-                        if (currentPatientDataUnsubscribe) currentPatientDataUnsubscribe();
                         showScreen('home');
                     }
                 });
 
             } catch (error) {
                 console.error("Erro ao inicializar Firebase:", error);
-                document.getElementById('loading-screen').innerHTML = "<p class='text-red-600 text-center p-4'>Erro ao inicializar o Firebase. Verifique o console para detalhes.</p>";
+                document.getElementById('loading-screen').innerHTML = "<p class='text-red-600'>Erro ao carregar o aplicativo. Verifique a configuração do Firebase.</p>";
             }
         }
         
@@ -548,41 +523,31 @@
          * Faz o login do paciente (anônimo ou com token)
          */
         async function signInPatient() {
-            // Se já estiver logado (mesmo que em outra aba), o onAuthStateChanged já tratou
-            if (auth.currentUser && !isProfessional) {
-                 await checkPatientRegistration();
-                 return;
-            }
-            
-            showScreen('loading');
             try {
-                // A variável __initial_auth_token é injetada pelo ambiente
-                const authToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-                if (authToken) {
-                    await signInWithCustomToken(auth, authToken);
+                if (auth.currentUser) return; // Já logado
+                
+                showScreen('loading');
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
-                    // Fallback para anônimo se o token não for fornecido
                     await signInAnonymously(auth);
                 }
-                // onAuthStateChanged vai lidar com a verificação de cadastro e mudança de tela
+                // onAuthStateChanged vai lidar com o resto
             } catch (error) {
                 console.error("Erro no login do paciente:", error);
                 showScreen('home');
-                // Não usamos alert()
-                showModal('Erro de Login', 'Não foi possível iniciar a sessão de paciente. Por favor, tente recarregar a página.', { confirmText: 'OK', cancelText: '' });
+                alert("Não foi possível iniciar a sessão. Tente novamente.");
             }
         }
         
         /**
-         * Verifica se o paciente (logado) já tem um perfil salvo
+         * Verifica se o paciente já tem cadastro
          */
         async function checkPatientRegistration() {
             if (!userId) return;
             
             showScreen('loading');
             try {
-                // Caminho para o perfil privado do paciente
                 const profileDocRef = doc(db, "artifacts", appId, "users", userId, "patientProfile", "profile");
                 const docSnap = await getDoc(profileDocRef);
 
@@ -603,7 +568,7 @@
         // --- Fluxo do Paciente ---
         
         /**
-         * Lida com o registro do paciente no formulário
+         * Lida com o registro do paciente
          */
         async function handlePatientRegister(event) {
             event.preventDefault();
@@ -613,7 +578,7 @@
             const medicamentos = sanitize(document.getElementById('reg-medicamentos').value);
 
             if (!prontuario || !nome || !idade) {
-                showModal('Campos Obrigatórios', 'Por favor, preencha Prontuário, Nome e Idade.', { confirmText: 'OK', cancelText: '' });
+                alert("Por favor, preencha Prontuário, Nome e Idade.");
                 return;
             }
             
@@ -625,21 +590,20 @@
                 createdAt: new Date().toISOString()
             };
 
-            // Dados para o índice público de busca
             const indexData = {
                 medicalRecord: prontuario,
-                patientUserId: userId, // Link para os dados privados
+                patientUserId: userId,
                 patientName: nome
             };
             
             showScreen('loading');
             try {
-                // 1. Salva o perfil privado
+                // Salva o perfil privado
                 const profileDocRef = doc(db, "artifacts", appId, "users", userId, "patientProfile", "profile");
                 await setDoc(profileDocRef, patientData);
                 
-                // 2. Cria o índice público para busca do profissional
-                // Usamos o userId como ID do documento de índice para obedecer as regras de segurança
+                // Cria o índice público para busca do profissional
+                // Usamos o userId como ID do documento de índice para fácil referência
                 const indexDocRef = doc(db, "artifacts", appId, "public/data/patientIndex", userId);
                 await setDoc(indexDocRef, indexData);
 
@@ -649,7 +613,7 @@
                 
             } catch (error) {
                 console.error("Erro ao salvar cadastro:", error);
-                showModal('Erro', 'Erro ao salvar cadastro. Tente novamente.', { confirmText: 'OK', cancelText: '' });
+                alert("Erro ao salvar cadastro. Tente novamente.");
                 showScreen('patientRegister');
             }
         }
@@ -668,9 +632,6 @@
                     const data = docSnap.data();
                     patientInfo.textContent = `${data.name} (Prontuário: ${data.medicalRecord})`;
                 }
-            }).catch(err => {
-                console.error("Erro ao buscar perfil para header:", err);
-                patientInfo.textContent = "Erro ao carregar dados do paciente.";
             });
 
             // Limpa listener antigo, se houver
@@ -711,9 +672,6 @@
             
             container.innerHTML = ''; // Limpa o container
             days.forEach(day => {
-                // Certifica que os arrays existem para evitar erros no map
-                day.intake = day.intake || [];
-                day.output = day.output || [];
                 const dayCard = createDayCard(day, 'patient');
                 container.appendChild(dayCard);
             });
@@ -730,7 +688,6 @@
             dayCard.dataset.dayId = day.id; // day.id é a data YYYY-MM-DD
 
             const calculations = calculateDayStats(day);
-            // Adiciona T00:00:00 e timeZone UTC para garantir que a data seja interpretada corretamente
             const readableDate = new Date(day.date + 'T00:00:00').toLocaleDateString('pt-BR', { timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric' });
 
             let highlightsHTML = '';
@@ -820,7 +777,7 @@
                         handleDeleteEntry(dayId, entryType, entryId);
                     };
                 });
-            } else { // 'prof' view
+            } else {
                  dayCard.querySelector('.btn-export-day-prof').onclick = () => handleExportPDF([day], true);
             }
 
@@ -843,7 +800,6 @@
             } else { // output
                 const volume = entry.volume ? `${entry.volume} ml` : `Não quant. (${entry.nonQuantifiable})`;
                 const residual = entry.residual ? ` (Res: ${entry.residual} ml)` : '';
-                // Adiciona cor de destaque ao residual
                 const residualColor = entry.residual > 100 ? 'text-red-600' : (entry.residual > 30 ? 'text-yellow-600' : '');
                 details = `${volume} no ${entry.location}<span class="font-medium ${residualColor}">${residual}</span>`;
             }
@@ -878,15 +834,14 @@
             if (!userId) return;
 
             const dayDocRef = doc(db, "artifacts", appId, "users", userId, "diaryDays", dayId);
-            
+            const docSnap = await getDoc(dayDocRef);
+
+            if (docSnap.exists()) {
+                alert("O dia de hoje já foi adicionado.");
+                return;
+            }
+
             try {
-                const docSnap = await getDoc(dayDocRef);
-
-                if (docSnap.exists()) {
-                    showModal("Dia já existe", "O dia de hoje já foi adicionado.", { confirmText: 'OK', cancelText: '' });
-                    return;
-                }
-
                 const newDay = {
                     date: today,
                     intake: [],
@@ -897,7 +852,7 @@
                 // O listener onSnapshot vai atualizar a UI
             } catch (error) {
                 console.error("Erro ao adicionar dia:", error);
-                showModal("Erro", "Erro ao adicionar o dia. Tente novamente.", { confirmText: 'OK', cancelText: '' });
+                alert("Erro ao adicionar o dia. Tente novamente.");
             }
         }
 
@@ -914,7 +869,7 @@
             // Clona o formulário do template
             const formTemplate = document.getElementById(type === 'intake' ? 'intake-form-template' : 'output-form-template');
             const form = formTemplate.cloneNode(true);
-            form.id = `modal-${type}-form`; // ID único para o formulário clonado
+            form.id = `modal-${type}-form`;
             
             // Preenche os campos do formulário
             form.dayId.value = dayId;
@@ -947,7 +902,6 @@
                 const volumeInput = form.querySelector('input[name="volume"]');
                 const nonQuantifiableGroup = form.querySelector('#non-quantifiable-group');
                 const nonQuantifiableSelect = form.querySelector('select[name="nonQuantifiable"]');
-                // Lógica de visibilidade e estado disabled
                 nonQuantifiableGroup.style.display = (volumeInput.value ? 'none' : 'block');
                 volumeInput.disabled = (nonQuantifiableSelect.value !== '');
             }
@@ -957,7 +911,6 @@
                 confirmText: 'Salvar',
                 confirmColor: 'bg-green-600',
                 onConfirm: () => {
-                    // A função de submit é que vai fechar o modal se for bem-sucedida
                     handleSubmitEntry(form, type, dayId, isEditing);
                 }
             });
@@ -972,18 +925,11 @@
             
             let entryData;
             
-            // Validação de Data/Hora
-            const datetime = formData.get('datetime');
-            if (!datetime) {
-                 showModal("Erro", "Data e Hora são obrigatórios.", { confirmText: 'OK', cancelText: '', onConfirm: hideModal });
-                 return; // Não fecha o modal de edição
-            }
-            
             if (type === 'intake') {
                 const intakeType = formData.get('type');
                 entryData = {
                     id: entryId,
-                    datetime: new Date(datetime).toISOString(),
+                    datetime: new Date(formData.get('datetime')).toISOString(),
                     type: intakeType,
                     volume: intakeType === 'liquido' ? parseInt(sanitize(formData.get('volume'))) || 0 : 0,
                     fruitName: intakeType === 'fruta' ? sanitize(formData.get('fruitName')) : ''
@@ -991,7 +937,7 @@
             } else { // output
                 entryData = {
                     id: entryId,
-                    datetime: new Date(datetime).toISOString(),
+                    datetime: new Date(formData.get('datetime')).toISOString(),
                     volume: parseInt(sanitize(formData.get('volume'))) || 0,
                     nonQuantifiable: sanitize(formData.get('nonQuantifiable')) || '',
                     location: sanitize(formData.get('location')),
@@ -1008,19 +954,17 @@
                     if (!docSnap.exists()) throw new Error("Documento do dia não encontrado.");
                     
                     const dayData = docSnap.data();
-                    const oldEntry = (dayData[type] || []).find(e => e.id === entryId);
+                    const oldEntry = dayData[type].find(e => e.id === entryId);
                     
                     if (oldEntry) {
-                        // Remove o antigo
                         await updateDoc(dayDocRef, {
-                            [type]: arrayRemove(oldEntry) 
+                            [type]: arrayRemove(oldEntry) // Remove o antigo
                         });
-                        // Adiciona o novo
                         await updateDoc(dayDocRef, {
-                            [type]: arrayUnion(entryData)
+                            [type]: arrayUnion(entryData) // Adiciona o novo
                         });
                     } else {
-                        // Se não achar o antigo (caso raro), apenas adiciona
+                        // Se não achar o antigo, apenas adiciona
                         await updateDoc(dayDocRef, {
                             [type]: arrayUnion(entryData)
                         });
@@ -1032,11 +976,10 @@
                     });
                 }
                 
-                hideModal(); // Sucesso, fecha o modal
+                hideModal(); // Sucesso
             } catch (error) {
                 console.error("Erro ao salvar registro:", error);
-                // Mostra erro, mas não fecha o modal
-                showModal("Erro", "Erro ao salvar. Tente novamente.", { confirmText: 'OK', cancelText: '', onConfirm: hideModal });
+                alert("Erro ao salvar. Tente novamente.");
             }
         }
         
@@ -1054,13 +997,10 @@
                         try {
                             const dayDocRef = doc(db, "artifacts", appId, "users", userId, "diaryDays", dayId);
                             const docSnap = await getDoc(dayDocRef);
-                            if (!docSnap.exists()) {
-                                hideModal();
-                                return;
-                            }
+                            if (!docSnap.exists()) return;
                             
                             const dayData = docSnap.data();
-                            const entryToDelete = (dayData[entryType] || []).find(e => e.id === entryId);
+                            const entryToDelete = dayData[entryType].find(e => e.id === entryId);
 
                             if (entryToDelete) {
                                 await updateDoc(dayDocRef, {
@@ -1070,7 +1010,7 @@
                             hideModal();
                         } catch (error) {
                             console.error("Erro ao apagar:", error);
-                            showModal("Erro", "Erro ao apagar registro.", { confirmText: 'OK', cancelText: '', onConfirm: hideModal });
+                            alert("Erro ao apagar registro.");
                         }
                     }
                 }
@@ -1087,18 +1027,15 @@
             let totalOutput = 0;
             let nightlyVolume = 0;
             const highlights = [];
-            
-            const intake = day.intake || [];
-            const output = day.output || [];
 
-            intake.forEach(entry => {
+            day.intake.forEach(entry => {
                 if (entry.type === 'liquido') {
                     totalIntake += entry.volume || 0;
                 }
-                // Frutas não contam no volume por padrão
+                // Frutas não contam no volume por padrão, pode ser ajustado
             });
 
-            output.forEach(entry => {
+            day.output.forEach(entry => {
                 const entryVolume = entry.volume || 0; // Se for não quantificável, volume é 0
                 totalOutput += entryVolume;
                 
@@ -1113,12 +1050,12 @@
                 if (entry.residual > 100) {
                     highlights.push({
                         level: 'danger',
-                        message: `Residual alto: ${entry.residual} ml às ${formatDateTimeReadable(entry.datetime).split(' ')[1]}`
+                        message: `Residual alto: ${entry.residual} ml às ${formatDateTimeReadable(entry.datetime)}`
                     });
                 } else if (entry.residual > 30) {
                     highlights.push({
                         level: 'warning',
-                        message: `Residual elevado: ${entry.residual} ml às ${formatDateTimeReadable(entry.datetime).split(' ')[1]}`
+                        message: `Residual elevado: ${entry.residual} ml às ${formatDateTimeReadable(entry.datetime)}`
                     });
                 }
             });
@@ -1135,145 +1072,122 @@
          */
         async function handleExportPDF(daysToExport, isProfView) {
             let patientProfile = null;
-            let patientUserIdForPDF = userId; // Padrão para paciente
-            let patientMedicalRecord = "N/A";
+            let patientUserId = userId; // Padrão para paciente
 
             if (isProfView) {
                 // Na visão do prof, precisamos buscar o ID do paciente
                 const prontuario = document.getElementById('search-prontuario').value;
                 const patientData = await getPatientDataByProntuario(prontuario);
-                if (!patientData) {
-                    showModal("Erro", "Não foi possível encontrar dados do paciente para exportar.", { confirmText: 'OK', cancelText: '' });
-                    return;
-                }
-                patientUserIdForPDF = patientData.patientUserId;
-                patientMedicalRecord = patientData.profile.medicalRecord || "N/A";
+                if (!patientData) return;
+                patientUserId = patientData.patientUserId;
             }
 
             // Buscar dados do perfil do paciente
-            const profileDocRef = doc(db, "artifacts", appId, "users", patientUserIdForPDF, "patientProfile", "profile");
-            try {
-                const docSnap = await getDoc(profileDocRef);
-                if (docSnap.exists()) {
-                    patientProfile = docSnap.data();
-                    patientMedicalRecord = patientProfile.medicalRecord || patientMedicalRecord;
-                } else {
-                    throw new Error("Perfil do paciente não encontrado.");
-                }
+            const profileDocRef = doc(db, "artifacts", appId, "users", patientUserId, "patientProfile", "profile");
+            const docSnap = await getDoc(profileDocRef);
+            if (docSnap.exists()) {
+                patientProfile = docSnap.data();
+            }
             
-                const pdf = new jsPDF();
-                let y = 15; // Posição Y inicial
+            const pdf = new jsPDF();
+            let y = 15; // Posição Y inicial
 
-                pdf.setFont('helvetica', 'bold');
-                pdf.setFontSize(16);
-                pdf.text('Diário Miccional Digital', pdf.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+            pdf.setFont('helvetica', 'bold');
+            pdf.setFontSize(16);
+            pdf.text('Diário Miccional Digital', pdf.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+            y += 10;
+            
+            if (patientProfile) {
+                pdf.setFont('helvetica', 'normal');
+                pdf.setFontSize(12);
+                pdf.text(`Paciente: ${patientProfile.name}`, 14, y);
+                y += 7;
+                pdf.text(`Prontuário: ${patientProfile.medicalRecord}`, 14, y);
+                y += 7;
+                pdf.text(`Idade: ${patientProfile.age}`, 14, y);
+                y += 7;
+                pdf.text(`Medicamentos: ${patientProfile.medications || 'Nenhum'}`, 14, y);
                 y += 10;
-                
-                if (patientProfile) {
-                    pdf.setFont('helvetica', 'normal');
-                    pdf.setFontSize(12);
-                    pdf.text(`Paciente: ${patientProfile.name}`, 14, y);
-                    y += 7;
-                    pdf.text(`Prontuário: ${patientProfile.medicalRecord}`, 14, y);
-                    y += 7;
-                    pdf.text(`Idade: ${patientProfile.age}`, 14, y);
-                    y += 7;
-                    
-                    // Quebra de linha para medicamentos
-                    const meds = pdf.splitTextToSize(`Medicamentos: ${patientProfile.medications || 'Nenhum'}`, 180);
-                    pdf.text(meds, 14, y);
-                    y += (meds.length * 5) + 5;
+            }
+            
+            // Ordena os dias
+            daysToExport.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            daysToExport.forEach((day, index) => {
+                if (index > 0) {
+                    pdf.addPage();
+                    y = 15;
+                }
+
+                const readableDate = new Date(day.date + 'T00:00:00').toLocaleDateString('pt-BR', { timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric' });
+                pdf.setFont('helvetica', 'bold');
+                pdf.setFontSize(14);
+                pdf.text(`Dia: ${readableDate}`, 14, y);
+                y += 10;
+
+                // Resumo
+                const stats = calculateDayStats(day);
+                pdf.setFont('helvetica', 'bold');
+                pdf.setFontSize(10);
+                pdf.text('Resumo:', 14, y);
+                pdf.setFont('helvetica', 'normal');
+                pdf.text(`Entradas: ${stats.totalIntake} ml | Saídas: ${stats.totalOutput} ml | Balanço: ${stats.balance} ml | Vol. Noturno: ${stats.nightlyVolume} ml`, 20, y + 5);
+                y += 12;
+
+                // Tabela de Entradas
+                if (day.intake.length > 0) {
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.text('Entradas (Ingestão)', 14, y);
+                    y += 5;
+                    autoTable(pdf, {
+                        startY: y,
+                        head: [['Hora', 'Tipo', 'Detalhe', 'Volume (ml)']],
+                        body: day.intake.map(e => [
+                            formatDateTimeReadable(e.datetime).split(' ')[1],
+                            e.type === 'liquido' ? 'Líquido' : 'Fruta',
+                            e.fruitName || '-',
+                            e.volume || 0
+                        ]),
+                        theme: 'grid',
+                        headStyles: { fillColor: [22, 160, 133] },
+                        styles: { fontSize: 9, cellPadding: 2 },
+                    });
+                    y = pdf.lastAutoTable.finalY + 10;
                 }
                 
-                // Ordena os dias
-                daysToExport.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-                daysToExport.forEach((day, index) => {
-                    // Garante que os arrays existem
-                    day.intake = day.intake || [];
-                    day.output = day.output || [];
-                
-                    if (index > 0) {
-                        pdf.addPage();
-                        y = 15;
-                    }
-
-                    const readableDate = new Date(day.date + 'T00:00:00').toLocaleDateString('pt-BR', { timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric' });
+                // Tabela de Saídas
+                if (day.output.length > 0) {
                     pdf.setFont('helvetica', 'bold');
-                    pdf.setFontSize(14);
-                    pdf.text(`Dia: ${readableDate}`, 14, y);
-                    y += 10;
-
-                    // Resumo
-                    const stats = calculateDayStats(day);
-                    pdf.setFont('helvetica', 'bold');
-                    pdf.setFontSize(10);
-                    pdf.text('Resumo:', 14, y);
-                    pdf.setFont('helvetica', 'normal');
-                    pdf.text(`Entradas: ${stats.totalIntake} ml | Saídas: ${stats.totalOutput} ml | Balanço: ${stats.balance} ml | Vol. Noturno: ${stats.nightlyVolume} ml`, 20, y + 5);
-                    y += 12;
-
-                    // Tabela de Entradas
-                    if (day.intake.length > 0) {
-                        pdf.setFont('helvetica', 'bold');
-                        pdf.text('Entradas (Ingestão)', 14, y);
-                        y += 5;
-                        autoTable(pdf, {
-                            startY: y,
-                            head: [['Hora', 'Tipo', 'Detalhe', 'Volume (ml)']],
-                            body: day.intake.map(e => [
-                                formatDateTimeReadable(e.datetime).split(' ')[1], // Apenas a hora
-                                e.type === 'liquido' ? 'Líquido' : 'Fruta',
-                                e.fruitName || '-',
-                                e.volume || 0
-                            ]),
-                            theme: 'grid',
-                            headStyles: { fillColor: [22, 160, 133] }, // Verde
-                            styles: { fontSize: 9, cellPadding: 2 },
-                        });
-                        y = pdf.lastAutoTable.finalY + 10;
-                    }
-                    
-                    // Tabela de Saídas
-                    if (day.output.length > 0) {
-                        pdf.setFont('helvetica', 'bold');
-                        pdf.text('Saídas (Micção)', 14, y);
-                        y += 5;
-                        autoTable(pdf, {
-                            startY: y,
-                            head: [['Hora', 'Volume (ml)', 'Não Quant.', 'Local', 'Residual (ml)']],
-                            body: day.output.map(e => [
-                                formatDateTimeReadable(e.datetime).split(' ')[1], // Apenas a hora
-                                e.volume || '-',
-                                e.nonQuantifiable || '-',
-                                e.location || '-',
-                                e.residual || 0
-                            ]),
-                            theme: 'grid',
-                            headStyles: { fillColor: [211, 84, 0] }, // Laranja
-                            styles: { fontSize: 9, cellPadding: 2 },
-                            didParseCell: function(data) {
-                                // Colore células de residual alto
-                                if (data.column.index === 4 && data.cell.raw > 30) {
-                                    if (data.cell.raw > 100) {
-                                        data.cell.styles.textColor = [255, 0, 0]; // Vermelho
-                                    } else {
-                                        data.cell.styles.textColor = [243, 156, 18]; // Amarelo/Laranja
-                                    }
-                                    data.cell.styles.fontStyle = 'bold';
+                    pdf.text('Saídas (Micção)', 14, y);
+                    y += 5;
+                    autoTable(pdf, {
+                        startY: y,
+                        head: [['Hora', 'Volume (ml)', 'Não Quant.', 'Local', 'Residual (ml)']],
+                        body: day.output.map(e => [
+                            formatDateTimeReadable(e.datetime).split(' ')[1],
+                            e.volume || '-',
+                            e.nonQuantifiable || '-',
+                            e.location || '-',
+                            e.residual || 0
+                        ]),
+                        theme: 'grid',
+                        headStyles: { fillColor: [211, 84, 0] },
+                        styles: { fontSize: 9, cellPadding: 2 },
+                        columnStyles: {
+                            4: { // Coluna Residual
+                                cellFormat: (data, cell) => {
+                                    if (data > 100) cell.styles.textColor = [255, 0, 0]; // Vermelho
+                                    else if (data > 30) cell.styles.textColor = [243, 156, 18]; // Amarelo
+                                    return data;
                                 }
                             }
-                        });
-                        y = pdf.lastAutoTable.finalY + 10;
-                    }
-                });
+                        }
+                    });
+                    y = pdf.lastAutoTable.finalY + 10;
+                }
+            });
 
-                pdf.save(`diario_miccional_${patientMedicalRecord}.pdf`);
-
-            } catch (error) {
-                console.error("Erro ao gerar PDF:", error);
-                 showModal("Erro", "Não foi possível gerar o PDF. " + error.message, { confirmText: 'OK', cancelText: '' });
-            }
+            pdf.save(`diario_miccional_${patientProfile ? patientProfile.medicalRecord : 'export'}.pdf`);
         }
         
         // --- Fluxo do Profissional ---
@@ -1295,8 +1209,6 @@
             try {
                 await signInWithEmailAndPassword(auth, email, password);
                 // Sucesso, o onAuthStateChanged vai lidar com a mudança de tela
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Entrar';
             } catch (error) {
                 console.error("Erro de login:", error.code);
                 errorP.textContent = 'Email ou senha inválidos.';
@@ -1306,7 +1218,7 @@
                 setTimeout(() => {
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Entrar';
-                }, 1000); // 1 segundo de atraso
+                }, 3000); // 3 segundos de atraso
             }
         }
 
@@ -1324,7 +1236,7 @@
                     currentPatientDataUnsubscribe();
                     currentPatientDataUnsubscribe = null;
                 }
-                // o onAuthStateChanged vai para a tela home
+                showScreen('home'); // Volta para a tela inicial
             } catch (error) {
                 console.error("Erro ao sair:", error);
             }
@@ -1338,7 +1250,6 @@
             status.textContent = 'Buscando...';
             status.className = 'text-sm mt-2 text-gray-600';
 
-            // A forma correta é BUSCAR (query) pelo campo 'medicalRecord' no índice público
             const q = query(
                 collection(db, "artifacts", appId, "public/data/patientIndex"),
                 where("medicalRecord", "==", prontuario)
@@ -1352,16 +1263,14 @@
                     return null;
                 }
                 
-                // Pega o primeiro resultado (prontuários devem ser únicos)
                 const patientIndex = querySnapshot.docs[0].data();
                 const patientUserId = patientIndex.patientUserId;
 
-                // Agora busca o perfil privado usando o patientUserId
                 const profileDocRef = doc(db, "artifacts", appId, "users", patientUserId, "patientProfile", "profile");
                 const profileSnap = await getDoc(profileDocRef);
                 
                 if (!profileSnap.exists()) {
-                    status.textContent = 'Dados do paciente não encontrados (índice existe, mas perfil não).';
+                    status.textContent = 'Dados do paciente não encontrados (índice existe).';
                     status.className = 'text-sm mt-2 text-red-600';
                     return null;
                 }
@@ -1418,7 +1327,7 @@
                 <div><strong>Nome:</strong> ${profile.name}</div>
                 <div><strong>Prontuário:</strong> ${profile.medicalRecord}</div>
                 <div><strong>Idade:</strong> ${profile.age}</div>
-                <div class="md:col-span-2"><strong>Medicamentos:</strong> ${profile.medications || 'N/A'}</div>
+                <div><strong>Medicamentos:</strong> ${profile.medications || 'N/A'}</div>
             `;
         }
 
@@ -1428,11 +1337,9 @@
         function loadPatientDiaryForProf(patientUserId, profile) {
             const container = document.getElementById('prof-days-container');
             
-            // Caminho para os dias do paciente
             const daysCollectionRef = collection(db, "artifacts", appId, "users", patientUserId, "diaryDays");
             const q = query(daysCollectionRef);
             
-            // Inicia o listener
             currentPatientDataUnsubscribe = onSnapshot(q, (querySnapshot) => {
                 const days = [];
                 querySnapshot.forEach((doc) => {
@@ -1447,26 +1354,22 @@
                 
                 container.innerHTML = ''; // Limpa
                 days.forEach(day => {
-                    // Garante que os arrays existem
-                    day.intake = day.intake || [];
-                    day.output = day.output || [];
                     const dayCard = createDayCard(day, 'prof');
                     container.appendChild(dayCard);
                 });
                 
-                // Configura o botão de "Exportar Tudo" com os dados carregados
+                // Configura o botão de "Exportar Tudo"
                 document.getElementById('btn-export-all-prof').onclick = () => handleExportPDF(days, true);
 
             }, (error) => {
                 console.error("Erro ao carregar diário (prof):", error);
-                container.innerHTML = '<p class="text-red-600">Erro ao carregar diário. Verifique as permissões de segurança do Firestore.</p>';
+                container.innerHTML = '<p class="text-red-600">Erro ao carregar diário. Verifique as permissões.</p>';
             });
         }
         
 
         // --- Event Listeners Iniciais ---
         
-        // Inicializa o app assim que a janela carregar
         window.onload = initializeFirebase;
 
         // Navegação Home
@@ -1479,10 +1382,121 @@
         document.getElementById('prof-login-form').onsubmit = handleProfLogin;
         document.getElementById('patient-search-form').onsubmit = handlePatientSearch;
         
-        // Botões do Diário do Paciente
+        // Botões do Diário
         document.getElementById('btn-add-day').onclick = handleAddDay;
 
     </script>
     
+    <!-- 
+    ===========================================================================================
+    INSTRUÇÕES DE CONFIGURAÇÃO DO FIREBASE E DEPLOY
+    ===========================================================================================
+    
+    Obrigado por usar este template! Para que o aplicativo funcione, você precisa
+    configurar o Firebase e o Netlify.
+
+    1. ONDE COLOCAR AS CHAVES DO FIREBASE:
+    -----------------------------------------
+    Este aplicativo é projetado para rodar em um ambiente (como o Netlify ou o 
+    Canvas do Gemini) que injeta as variáveis `__app_id` e `__firebase_config`.
+    
+    Se você estiver publicando no NETLIFY:
+    a. Vá ao seu projeto no Firebase -> Configurações do Projeto -> Geral.
+    b. Em "Seus apps", clique em "App da Web" (ícone </>).
+    c. Copie o objeto `firebaseConfig` (ex: { apiKey: "...", authDomain: "...", ... }).
+    d. No Netlify, vá para "Site settings" -> "Build & deploy" -> "Environment".
+    e. Crie uma variável de ambiente chamada `__firebase_config` e cole o objeto 
+       `firebaseConfig` COMPLETO como uma string JSON. 
+       IMPORTANTE: O JSON deve estar em uma linha ou ser um JSON válido.
+    f. O `__app_id` é usado para o caminho do Firestore. Você pode criar outra 
+       variável de ambiente `__app_id` com um nome único (ex: "meu-hospital-diario")
+       ou deixar o padrão "diario-miccional-default" que está no código.
+
+    2. COMO CADASTRAR USUÁRIOS PROFISSIONAIS:
+    -----------------------------------------
+    a. Vá ao seu Console do Firebase -> Authentication -> Users.
+    b. Clique em "Add user".
+    c. Digite o EMAIL e a SENHA para o profissional de saúde.
+    d. (RECOMENDADO PARA SEGURANÇA MÁXIMA) Após criar o usuário, você deveria
+       adicionar "Custom Claims" a ele. Isso exige um script de backend (Firebase Functions)
+       para definir `isProfessional: true` no token do usuário. As regras de 
+       segurança abaixo são ESCRITAS PARA USAR ISSO.
+       
+       Exemplo de Firebase Function (para referência):
+       const functions = require('firebase-functions');
+       const admin = require('firebase-admin');
+       admin.initializeApp();
+       
+       exports.addProfessionalRole = functions.https.onCall(async (data, context) => {
+         // (Proteja isso para que apenas admins possam chamar)
+         const user = await admin.auth().getUserByEmail(data.email);
+         await admin.auth().setCustomUserClaims(user.uid, { isProfessional: true });
+         return { message: `Claim set for ${data.email}` };
+       });
+
+    3. COMO CONFIGURAR REGRAS DE SEGURANÇA (OBRIGATÓRIO):
+    -----------------------------------------
+    Vá ao seu Console do Firebase -> Firestore Database -> Rules.
+    Copie e cole as regras abaixo. Elas são CRÍTICAS para a segurança (HIPAA).
+    
+    ================ INÍCIO DAS REGRAS DO FIRESTORE ================
+    rules_version = '2';
+    
+    service cloud.firestore {
+      match /databases/{database}/documents {
+      
+        // Função helper para verificar se o usuário é um profissional (via Custom Claim)
+        function isProfessional() {
+          return request.auth != null && request.auth.token.isProfessional == true;
+        }
+        
+        // Caminho do App (substitua 'diario-miccional-default' se você usou um __app_id diferente)
+        match /artifacts/{appId} {
+        
+          // --- REGRAS DO PACIENTE (DADOS PRIVADOS) ---
+          // O paciente só pode ler e escrever SEUS PRÓPRIOS dados
+          match /users/{userId}/{collection}/{docId} {
+            allow read, write: if request.auth.uid == userId;
+          }
+          
+          // O profissional pode LER os dados de qualquer paciente
+          // (mas não pode escrever)
+          match /users/{patientId}/patientProfile/profile {
+             allow get: if isProfessional();
+          }
+          match /users/{patientId}/diaryDays/{dayId} {
+             allow get, list: if isProfessional();
+          }
+          
+          // --- REGRAS DO ÍNDICE PÚBLICO (PARA BUSCA) ---
+          match /public/data/patientIndex/{docId} {
+            // O paciente só pode criar SEU PRÓPRIO índice
+            allow create: if request.auth.uid == request.resource.data.patientUserId;
+            
+            // O profissional pode LER (listar/buscar) o índice
+            allow list, get: if isProfessional();
+            
+            // Ninguém pode atualizar ou deletar (para segurança)
+            allow update, delete: if false;
+          }
+        }
+      }
+    }
+    ================ FIM DAS REGRAS DO FIRESTORE ================
+
+    4. COMO PUBLICAR NO NETLIFY:
+    -----------------------------------------
+    a. Salve este arquivo como `index.html` em uma pasta.
+    b. Crie um repositório no GitHub/GitLab/Bitbucket e envie esta pasta.
+    c. Vá ao Netlify e clique em "Add new site" -> "Import an existing project".
+    d. Conecte ao seu provedor Git e selecione o repositório.
+    e. Nas configurações de deploy:
+       - Build command: (deixe em branco)
+       - Publish directory: (deixe em branco, ou coloque o nome da pasta se
+         o `index.html` não estiver na raiz)
+    f. Adicione as Variáveis de Ambiente (passo 1.d).
+    g. Clique em "Deploy site".
+
+    -->
 </body>
 </html>
